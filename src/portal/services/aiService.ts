@@ -43,13 +43,34 @@ TONE AND STYLE:
 - Use clear bullet points and clean structure.
 `;
 
-export async function callOpenAI(
-  messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }>,
+export async function polishTemplateWithAI(
+  currentText: string,
+  userInstruction: string,
   apiKey?: string
 ): Promise<string> {
+  // 1. Attempt via serverless endpoint first
+  try {
+    const apiRes = await fetch('/api/ai-proposal', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        mode: 'polish',
+        prompt: userInstruction,
+        currentText
+      })
+    });
+    if (apiRes.ok) {
+      const data = await apiRes.json();
+      if (data.result) return data.result;
+    }
+  } catch (err) {
+    // Continue to direct fallback
+  }
+
+  // 2. Direct OpenAI call fallback (if user provided a browser key)
   const key = apiKey || getStoredOpenAIKey();
   if (!key) {
-    throw new Error('OpenAI API Key is required. Please set your API key in Director Settings or the AI Assistant tab.');
+    throw new Error('Please configure OPENAI_API_KEY on the server or provide an API key in the Director Settings.');
   }
 
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -60,37 +81,11 @@ export async function callOpenAI(
     },
     body: JSON.stringify({
       model: 'gpt-4o-mini',
-      messages,
-      temperature: 0.7,
-      max_tokens: 1500
-    })
-  });
-
-  if (!response.ok) {
-    const errData = await response.json().catch(() => ({}));
-    const message = errData?.error?.message || `OpenAI API responded with status ${response.status}`;
-    throw new Error(message);
-  }
-
-  const data = await response.json();
-  const reply = data.choices?.[0]?.message?.content;
-  if (!reply) {
-    throw new Error('No response returned from OpenAI.');
-  }
-
-  return reply.trim();
-}
-
-export async function polishTemplateWithAI(
-  currentText: string,
-  userInstruction: string,
-  apiKey?: string
-): Promise<string> {
-  return callOpenAI([
-    { role: 'system', content: HLUGISO_SYSTEM_PROMPT },
-    {
-      role: 'user',
-      content: `Here is the current draft of an email / proposal for HLUGISO (Pty) Ltd:
+      messages: [
+        { role: 'system', content: HLUGISO_SYSTEM_PROMPT },
+        {
+          role: 'user',
+          content: `Here is the current draft of an email / proposal for HLUGISO (Pty) Ltd:
 
 --- DRAFT START ---
 ${currentText}
@@ -100,24 +95,80 @@ USER INSTRUCTION FOR CUSTOMIZATION:
 "${userInstruction}"
 
 Please rewrite or polish this text according to the user's instructions while preserving HLUGISO's statutory credentials, executive tone, and complete accuracy. Return ONLY the refined email / letter text.`
-    }
-  ], apiKey);
+        }
+      ],
+      temperature: 0.7,
+      max_tokens: 1500
+    })
+  });
+
+  if (!response.ok) {
+    const errData = await response.json().catch(() => ({}));
+    throw new Error(errData?.error?.message || `OpenAI API error ${response.status}`);
+  }
+
+  const data = await response.json();
+  return data.choices?.[0]?.message?.content?.trim() || '';
 }
 
 export async function generateCustomProposalWithAI(
   tenderPrompt: string,
   apiKey?: string
 ): Promise<string> {
-  return callOpenAI([
-    { role: 'system', content: HLUGISO_SYSTEM_PROMPT },
-    {
-      role: 'user',
-      content: `Please draft a complete, compelling commercial proposal or tender cover letter for HLUGISO (Pty) Ltd based on the following specific requirements or tender notice:
+  // 1. Attempt via serverless endpoint first
+  try {
+    const apiRes = await fetch('/api/ai-proposal', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        mode: 'scratch',
+        prompt: tenderPrompt
+      })
+    });
+    if (apiRes.ok) {
+      const data = await apiRes.json();
+      if (data.result) return data.result;
+    }
+  } catch (err) {
+    // Continue to direct fallback
+  }
+
+  // 2. Direct OpenAI call fallback (if user provided a browser key)
+  const key = apiKey || getStoredOpenAIKey();
+  if (!key) {
+    throw new Error('Please configure OPENAI_API_KEY on the server or provide an API key in the Director Settings.');
+  }
+
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${key}`
+    },
+    body: JSON.stringify({
+      model: 'gpt-4o-mini',
+      messages: [
+        { role: 'system', content: HLUGISO_SYSTEM_PROMPT },
+        {
+          role: 'user',
+          content: `Please draft a complete, compelling commercial proposal or tender cover letter for HLUGISO (Pty) Ltd based on the following specific requirements or tender notice:
 
 SPECIFICATION / REQUEST:
 "${tenderPrompt}"
 
 Include all applicable statutory details (CSD MAAA0818606, CIDB Grade 1CE, SARS PIN 9250830230, Level 1 B-BBEE), localized Tzaneen advantages, equipment fleet specifications, and executive signature by Managing Director Thabo Makola. Format clearly with Subject line, Dear Sir/Madam, structured sections, and closing.`
-    }
-  ], apiKey);
+        }
+      ],
+      temperature: 0.7,
+      max_tokens: 1500
+    })
+  });
+
+  if (!response.ok) {
+    const errData = await response.json().catch(() => ({}));
+    throw new Error(errData?.error?.message || `OpenAI API error ${response.status}`);
+  }
+
+  const data = await response.json();
+  return data.choices?.[0]?.message?.content?.trim() || '';
 }

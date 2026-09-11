@@ -29,6 +29,7 @@ import {
   polishTemplateWithAI, 
   generateCustomProposalWithAI 
 } from '../services/aiService';
+import { sendEmailViaResend } from '../services/emailService';
 
 export const TenderHub: React.FC = () => {
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
@@ -58,6 +59,10 @@ export const TenderHub: React.FC = () => {
   const [editedSubjects, setEditedSubjects] = useState<Record<string, string>>({});
   const [editedBodies, setEditedBodies] = useState<Record<string, string>>({});
   const [showEmailPreview, setShowEmailPreview] = useState<boolean>(true);
+
+  // Resend Email Direct Dispatch State
+  const [isSendingResend, setIsSendingResend] = useState<boolean>(false);
+  const [resendStatus, setResendStatus] = useState<{ success: boolean; message: string; id?: string } | null>(null);
 
   // OpenAI Integration State
   const [openAiKey, setOpenAiKey] = useState<string>('');
@@ -124,6 +129,48 @@ export const TenderHub: React.FC = () => {
     const subject = encodeURIComponent(getActiveSubject());
     const body = encodeURIComponent(getActiveBody());
     window.location.href = `mailto:${emailField}?subject=${subject}&body=${body}`;
+  };
+
+  const handleSendViaResend = async () => {
+    const targetEmail = currentValues['email']?.trim();
+    if (!targetEmail || !targetEmail.includes('@')) {
+      setResendStatus({
+        success: false,
+        message: 'Please provide a valid recipient email address before dispatching.'
+      });
+      return;
+    }
+
+    const confirmSend = window.confirm(
+      `Send "${getActiveSubject()}" directly to ${targetEmail} via Resend API from info@thabosystems.co.za?`
+    );
+    if (!confirmSend) return;
+
+    setIsSendingResend(true);
+    setResendStatus(null);
+
+    const result = await sendEmailViaResend({
+      to: targetEmail,
+      subject: getActiveSubject(),
+      bodyText: getActiveBody(),
+      fromName: 'HLUGISO (Pty) Ltd',
+      replyTo: 'info@hlugiso.co.za'
+    });
+
+    setIsSendingResend(false);
+
+    if (result.success) {
+      setResendStatus({
+        success: true,
+        message: `Email successfully dispatched to ${targetEmail} via Resend!`,
+        id: result.id
+      });
+    } else {
+      setResendStatus({
+        success: false,
+        message: result.error || 'Failed to dispatch email via Resend API.'
+      });
+    }
   };
 
   const handleAiRefine = async () => {
@@ -646,12 +693,53 @@ export const TenderHub: React.FC = () => {
           </button>
 
           <button
+            onClick={handleSendViaResend}
+            disabled={isSendingResend}
+            className="inline-flex items-center space-x-1.5 px-4 py-2.5 rounded-xl bg-purple-700 hover:bg-purple-800 disabled:bg-purple-300 text-white text-xs font-bold transition-all shadow-sm"
+            title="Dispatch email directly using Thabo-OS Resend API"
+          >
+            {isSendingResend ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+            <span>{isSendingResend ? 'Dispatching via Resend...' : 'Send Direct (Resend API)'}</span>
+          </button>
+
+          <button
             onClick={() => setShowEmailPreview(!showEmailPreview)}
             className="text-xs text-gray-500 hover:text-gray-900 underline ml-auto py-1"
           >
             {showEmailPreview ? 'Hide Preview' : 'Show Live Preview'}
           </button>
         </div>
+
+        {/* Resend Dispatch Status Alert */}
+        {resendStatus && (
+          <div className={`p-4 rounded-xl text-xs flex items-center justify-between border ${
+            resendStatus.success 
+              ? 'bg-emerald-50 border-emerald-300 text-emerald-900' 
+              : 'bg-red-50 border-red-300 text-red-900'
+          }`}>
+            <div className="flex items-center space-x-2.5">
+              {resendStatus.success ? (
+                <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+              ) : (
+                <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+              )}
+              <div>
+                <span className="font-bold">{resendStatus.message}</span>
+                {resendStatus.id && (
+                  <span className="block text-[10px] text-emerald-700 font-mono mt-0.5">
+                    Resend Message ID: {resendStatus.id} &bull; Sent from: info@thabosystems.co.za
+                  </span>
+                )}
+              </div>
+            </div>
+            <button 
+              onClick={() => setResendStatus(null)}
+              className="text-xs font-bold underline ml-4 shrink-0 hover:opacity-80"
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
 
         {/* Live Preview Box */}
         {showEmailPreview && (
