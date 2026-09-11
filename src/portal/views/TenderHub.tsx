@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Download, 
   Copy, 
@@ -11,65 +11,106 @@ import {
   Printer, 
   ExternalLink,
   Mail,
-  Send
+  Send,
+  Sparkles,
+  Key,
+  RefreshCw,
+  Sliders,
+  ChevronDown,
+  AlertCircle,
+  FileCheck2,
+  PhoneCall
 } from 'lucide-react';
 import { COMPANY_DETAILS } from '../../data/companyData';
+import { COMMUNICATION_TEMPLATES, CommunicationTemplate } from '../data/communicationTemplates';
+import { 
+  getStoredOpenAIKey, 
+  setStoredOpenAIKey, 
+  polishTemplateWithAI, 
+  generateCustomProposalWithAI 
+} from '../services/aiService';
 
 export const TenderHub: React.FC = () => {
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+
+  // Formal Procurement Tender Cover Letter State
   const [tenderRecipient, setTenderRecipient] = useState<string>('The Municipal Procurement Officer / Supply Chain Committee');
   const [tenderRef, setTenderRef] = useState<string>('RFQ / Tender Commercial Submission: Event Infrastructure & Fleet Supply');
   const [showCoverLetter, setShowCoverLetter] = useState<boolean>(false);
 
-  // Vendor Application Email State
-  const [vendorRecipient, setVendorRecipient] = useState<string>('Icebolethu Group Procurement Team');
-  const [vendorEmail, setVendorEmail] = useState<string>('procurement@icebolethu.co.za');
-  const [showVendorEmail, setShowVendorEmail] = useState<boolean>(true);
+  // Template Dispatcher State
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>('vendor_application');
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  
+  // Field values keyed by templateId -> fieldId -> value
+  const [fieldValues, setFieldValues] = useState<Record<string, Record<string, string>>>(() => {
+    const initial: Record<string, Record<string, string>> = {};
+    COMMUNICATION_TEMPLATES.forEach(tmpl => {
+      initial[tmpl.id] = {};
+      tmpl.fields.forEach(f => {
+        initial[tmpl.id][f.id] = f.defaultValue;
+      });
+    });
+    return initial;
+  });
 
-  const getEmailSubject = () => `Vendor Database Application – HLUGISO (Pty) Ltd`;
+  // Custom modified text override (if user or AI edits the text directly)
+  const [editedSubjects, setEditedSubjects] = useState<Record<string, string>>({});
+  const [editedBodies, setEditedBodies] = useState<Record<string, string>>({});
+  const [showEmailPreview, setShowEmailPreview] = useState<boolean>(true);
 
-  const getEmailPlainText = () => {
-    return `Sub: Vendor Database Application – HLUGISO (Pty) Ltd
+  // OpenAI Integration State
+  const [openAiKey, setOpenAiKey] = useState<string>('');
+  const [showAiPanel, setShowAiPanel] = useState<boolean>(false);
+  const [aiInstruction, setAiInstruction] = useState<string>('');
+  const [isAiLoading, setIsAiLoading] = useState<boolean>(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+  const [aiSuccessMessage, setAiSuccessMessage] = useState<string | null>(null);
 
-Dear ${vendorRecipient},
+  useEffect(() => {
+    setOpenAiKey(getStoredOpenAIKey());
+  }, []);
 
-Please find attached the completed Supplier Onboarding Form and supporting documentation for HLUGISO (Pty) Ltd to be listed on the Vendor Database.
-
-Proposed Goods & Services:
-- Weekly Funeral & Memorial Infrastructure Hire (Tents, Draping, Décor)
-- Mobile Sanitation (VIP Flushable Restroom Trailers)
-- Mobile Cold-Chain (Temperature-Controlled Cold Room Trailers)
-- Audio-Visual & Sound Reinforcement (Active PA systems, wireless mics, backup generator)
-- Ceremonial & Cultural Livestock Supply (Cattle, Goats, Sheep direct from Limpopo farms)
-- Outsourced Funeral Catering & Hospitality Services
-
-Attached Supporting Documents:
-1. Completed & Signed Supplier Onboarding Form
-2. HLUGISO Company Profile (2026 Edition with Equipment Fleet Photos)
-3. CIPC Company Registration Certificate (2019/412705/07)
-4. Certified ID Copy of Director
-5. SARS Tax Compliance Status (PIN Active: 9250830230)
-6. Stamped Bank Account Confirmation Letter (First National Bank)
-7. B-BBEE Sworn Affidavit (Level 1 Contributor • 100% Black Owned EME)
-8. Proof of Business Address (Lenyenye, Tzaneen)
-
-Please let us know if any additional information or verification is required to finalize our listing.
-
-Kind regards,
-
-Thabo Makola
-Managing Director
-HLUGISO (PTY) LTD
-Direct Line / WhatsApp: +27 83 597 6462
-Corporate Emails: info@hlugiso.co.za / thabomakola80@gmail.com
-Official Website: www.hlugiso.co.za
-Operating Base: Stand No. 01, Tickyline Village, Lenyenye, Tzaneen, Limpopo, 0850`;
+  const handleSaveApiKey = (key: string) => {
+    setOpenAiKey(key);
+    setStoredOpenAIKey(key);
+    setAiSuccessMessage('API key saved in browser storage.');
+    setTimeout(() => setAiSuccessMessage(null), 3000);
   };
 
-  const handleOpenMailto = () => {
-    const subject = encodeURIComponent(getEmailSubject());
-    const body = encodeURIComponent(getEmailPlainText());
-    window.location.href = `mailto:${vendorEmail}?subject=${subject}&body=${body}`;
+  const currentTemplate = COMMUNICATION_TEMPLATES.find(t => t.id === selectedTemplateId) || COMMUNICATION_TEMPLATES[0];
+  const currentValues = fieldValues[currentTemplate.id] || {};
+
+  const handleFieldChange = (fieldId: string, val: string) => {
+    setFieldValues(prev => ({
+      ...prev,
+      [currentTemplate.id]: {
+        ...prev[currentTemplate.id],
+        [fieldId]: val
+      }
+    }));
+    // Clear custom overrides when fields are re-typed so they regenerate dynamically
+    if (editedBodies[currentTemplate.id]) {
+      setEditedBodies(prev => {
+        const next = { ...prev };
+        delete next[currentTemplate.id];
+        return next;
+      });
+    }
+  };
+
+  const getActiveSubject = (): string => {
+    if (editedSubjects[currentTemplate.id]) {
+      return editedSubjects[currentTemplate.id];
+    }
+    return currentTemplate.getSubject(currentValues);
+  };
+
+  const getActiveBody = (): string => {
+    if (editedBodies[currentTemplate.id]) {
+      return editedBodies[currentTemplate.id];
+    }
+    return currentTemplate.getBody(currentValues);
   };
 
   const handleCopy = (key: string, text: string) => {
@@ -78,9 +119,80 @@ Operating Base: Stand No. 01, Tickyline Village, Lenyenye, Tzaneen, Limpopo, 085
     setTimeout(() => setCopiedKey(null), 2000);
   };
 
-  const handlePrintCoverLetter = () => {
-    window.print();
+  const handleOpenMailto = () => {
+    const emailField = currentValues['email'] || '';
+    const subject = encodeURIComponent(getActiveSubject());
+    const body = encodeURIComponent(getActiveBody());
+    window.location.href = `mailto:${emailField}?subject=${subject}&body=${body}`;
   };
+
+  const handleAiRefine = async () => {
+    if (!aiInstruction.trim()) {
+      setAiError('Please enter an instruction for what you want OpenAI to customize or polish.');
+      return;
+    }
+    setIsAiLoading(true);
+    setAiError(null);
+    try {
+      const refinedText = await polishTemplateWithAI(getActiveBody(), aiInstruction, openAiKey);
+      setEditedBodies(prev => ({
+        ...prev,
+        [currentTemplate.id]: refinedText
+      }));
+      setAiSuccessMessage('Draft successfully customized with OpenAI!');
+      setAiInstruction('');
+      setTimeout(() => setAiSuccessMessage(null), 4000);
+    } catch (err: any) {
+      setAiError(err.message || 'Failed to refine with OpenAI.');
+    } finally {
+      setIsAiLoading(false);
+    }
+  };
+
+  const handleAiDraftFromScratch = async () => {
+    if (!aiInstruction.trim()) {
+      setAiError('Please paste your tender requirement or client inquiry in the prompt box.');
+      return;
+    }
+    setIsAiLoading(true);
+    setAiError(null);
+    try {
+      const generatedText = await generateCustomProposalWithAI(aiInstruction, openAiKey);
+      setEditedBodies(prev => ({
+        ...prev,
+        [currentTemplate.id]: generatedText
+      }));
+      setAiSuccessMessage('Bespoke proposal drafted by OpenAI!');
+      setAiInstruction('');
+      setTimeout(() => setAiSuccessMessage(null), 4000);
+    } catch (err: any) {
+      setAiError(err.message || 'Failed to generate proposal with OpenAI.');
+    } finally {
+      setIsAiLoading(false);
+    }
+  };
+
+  const handleResetToTemplateDefault = () => {
+    setEditedBodies(prev => {
+      const next = { ...prev };
+      delete next[currentTemplate.id];
+      return next;
+    });
+    setEditedSubjects(prev => {
+      const next = { ...prev };
+      delete next[currentTemplate.id];
+      return next;
+    });
+  };
+
+  const filteredTemplates = COMMUNICATION_TEMPLATES.filter(tmpl => {
+    if (categoryFilter === 'all') return true;
+    if (categoryFilter === 'procurement') return tmpl.category === 'procurement';
+    if (categoryFilter === 'funeral_parlours') return tmpl.category === 'funeral_parlours';
+    if (categoryFilter === 'clients') return tmpl.category === 'clients';
+    if (categoryFilter === 'emergency_civils') return tmpl.category === 'emergency' || tmpl.category === 'civils';
+    return true;
+  });
 
   return (
     <div className="space-y-8">
@@ -91,10 +203,10 @@ Operating Base: Stand No. 01, Tickyline Village, Lenyenye, Tzaneen, Limpopo, 085
             Tender Readiness &amp; Compliance Hub
           </span>
           <h2 className="text-xl sm:text-2xl font-black text-gray-900 mt-2">
-            Company Profile &amp; Statutory Tender Credentials
+            Executive Document &amp; Proposal Dispatcher
           </h2>
           <p className="text-xs sm:text-sm text-gray-500 mt-1 max-w-2xl leading-relaxed">
-            Instant access to the official 2-page executive profile, 1-click copy for CSD and CIDB numbers, and automated procurement cover letters.
+            Instant access to the official 3-page corporate profile, 1-click statutory credentials, and 8 ready-to-dispatch tender, SLA, and quotation email templates.
           </p>
         </div>
 
@@ -120,7 +232,7 @@ Operating Base: Stand No. 01, Tickyline Village, Lenyenye, Tzaneen, Limpopo, 085
             </div>
             <h3 className="text-lg font-black text-white">HLUGISO_Company_Profile.pdf</h3>
             <p className="text-xs text-emerald-200 mt-0.5">
-              Strict 2-Page Executive A4 Format &bull; High-Resolution Print Ready &bull; Updated Directorship &amp; Fleet Photos
+              3-Page Publication Edition &bull; Pinned Statutory Footers &bull; High-Resolution Fleet Photos &bull; Tzaneen Head Office
             </p>
           </div>
         </div>
@@ -244,74 +356,285 @@ Operating Base: Stand No. 01, Tickyline Village, Lenyenye, Tzaneen, Limpopo, 085
         </div>
       </div>
 
-      {/* Vendor Database Application Email Dispatcher */}
+      {/* ========================================================= */}
+      {/* 🚀 EXECUTIVE PROPOSAL & COMMUNICATION DISPATCHER */}
+      {/* ========================================================= */}
       <div className="bg-white rounded-2xl border border-gray-200 p-6 sm:p-8 shadow-sm space-y-6">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b pb-4">
+        
+        {/* Header with AI trigger */}
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 border-b pb-5">
           <div>
             <div className="flex items-center space-x-2">
               <Mail className="w-5 h-5 text-[#064E3B]" />
               <h3 className="text-lg font-black text-gray-900">
-                Vendor Database Application &amp; Onboarding Email
+                Procurement, SLA &amp; Client Communication Dispatcher
               </h3>
             </div>
-            <p className="text-xs text-gray-500 mt-0.5">
-              Ready-to-send application email for funeral homes (Icebolethu, AVBOB, Doves), corporate vendor portals, and municipal databases.
+            <p className="text-xs text-gray-500 mt-1">
+              Select from 8 battle-tested South African procurement templates, customize variables, or use OpenAI to refine proposal content.
             </p>
           </div>
 
-          <div className="flex items-center space-x-2 shrink-0">
-            <a
-              href="/templates/vendor-application-email.html"
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-[#064E3B] text-xs font-bold transition-colors border border-emerald-200"
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={() => setShowAiPanel(!showAiPanel)}
+              className={`inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all shadow-sm border ${
+                showAiPanel 
+                  ? 'bg-purple-600 text-white border-purple-700' 
+                  : 'bg-purple-50 text-purple-800 border-purple-200 hover:bg-purple-100'
+              }`}
             >
-              <ExternalLink className="w-3.5 h-3.5" />
-              <span>Preview HTML Template</span>
-            </a>
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>AI Proposal Assistant</span>
+              {openAiKey && <span className="w-2 h-2 rounded-full bg-emerald-400 ml-1"></span>}
+            </button>
+
+            {selectedTemplateId === 'vendor_application' && (
+              <a
+                href="/templates/vendor-application-email.html"
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-[#064E3B] text-xs font-bold transition-colors border border-emerald-200"
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+                <span>HTML Template</span>
+              </a>
+            )}
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-          <div>
-            <label className="font-bold text-gray-700 block mb-1">Addressed To / Procuring Entity</label>
-            <input
-              type="text"
-              value={vendorRecipient}
-              onChange={e => setVendorRecipient(e.target.value)}
-              placeholder="e.g. Icebolethu Group Procurement Team"
-              className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-xs"
-            />
-          </div>
+        {/* Category Filters */}
+        <div className="flex flex-wrap items-center gap-1.5 pb-2 border-b border-gray-100">
+          <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mr-2">Category:</span>
+          {[
+            { id: 'all', label: 'All Templates (8)' },
+            { id: 'procurement', label: 'Vendor & Municipal SCM' },
+            { id: 'funeral_parlours', label: 'Funeral Parlours & SLAs' },
+            { id: 'clients', label: 'Private Quotes & Reviews' },
+            { id: 'emergency_civils', label: 'Civils & Emergency Relief' },
+          ].map(cat => (
+            <button
+              key={cat.id}
+              onClick={() => setCategoryFilter(cat.id)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
+                categoryFilter === cat.id
+                  ? 'bg-[#064E3B] text-white'
+                  : 'bg-gray-100 hover:bg-gray-200 text-gray-600'
+              }`}
+            >
+              {cat.label}
+            </button>
+          ))}
+        </div>
 
+        {/* Template Selector Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          {filteredTemplates.map(tmpl => {
+            const isSelected = tmpl.id === selectedTemplateId;
+            return (
+              <button
+                key={tmpl.id}
+                onClick={() => setSelectedTemplateId(tmpl.id)}
+                className={`text-left p-3.5 rounded-xl border transition-all ${
+                  isSelected
+                    ? 'border-[#064E3B] bg-emerald-50/40 ring-2 ring-[#064E3B]/20 shadow-sm'
+                    : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50/50'
+                }`}
+              >
+                <div className="flex items-center justify-between gap-1 mb-1">
+                  <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border ${tmpl.badgeColor}`}>
+                    {tmpl.badge}
+                  </span>
+                  {isSelected && <Check className="w-3.5 h-3.5 text-[#064E3B]" />}
+                </div>
+                <div className="text-xs font-bold text-gray-900 leading-snug line-clamp-2">
+                  {tmpl.title}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* AI Smart Assistant Panel (Collapsible) */}
+        {showAiPanel && (
+          <div className="bg-gradient-to-br from-purple-50 to-indigo-50 border border-purple-200 rounded-2xl p-5 space-y-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+              <div className="flex items-center space-x-2">
+                <Sparkles className="w-5 h-5 text-purple-700" />
+                <h4 className="text-sm font-black text-purple-950">
+                  OpenAI Proposal &amp; Tender Assistant
+                </h4>
+              </div>
+              <div className="text-[11px] text-purple-700 bg-purple-100/80 px-2.5 py-1 rounded-full border border-purple-200">
+                Model: <strong>gpt-4o-mini</strong> &bull; Pre-loaded with HLUGISO CSD, CIDB &amp; Fleet Data
+              </div>
+            </div>
+
+            {/* API Key Input */}
+            <div className="bg-white/80 p-3.5 rounded-xl border border-purple-200 space-y-2 text-xs">
+              <div className="flex justify-between items-center">
+                <label className="font-bold text-gray-700 flex items-center space-x-1">
+                  <Key className="w-3.5 h-3.5 text-purple-600" />
+                  <span>Your OpenAI API Key:</span>
+                </label>
+                <span className="text-[10px] text-gray-500">Stored safely in your browser</span>
+              </div>
+              <div className="flex gap-2">
+                <input
+                  type="password"
+                  value={openAiKey}
+                  onChange={(e) => handleSaveApiKey(e.target.value)}
+                  placeholder="sk-proj-..."
+                  className="flex-1 p-2 bg-white border border-gray-300 rounded-lg text-xs font-mono"
+                />
+                {openAiKey ? (
+                  <span className="inline-flex items-center text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200 shrink-0">
+                    <Check className="w-3 h-3 mr-1" /> Ready
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center text-[11px] font-bold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200 shrink-0">
+                    Key Required
+                  </span>
+                )}
+              </div>
+              <p className="text-[10px] text-gray-500">
+                Don't have an OpenAI key? Standard templates work 100% free with zero configuration. You only need this if you want AI to custom-rewrite or analyze tender specs.
+              </p>
+            </div>
+
+            {/* AI Prompt Box */}
+            <div className="space-y-2 text-xs">
+              <label className="font-bold text-purple-950 block">
+                Custom Instruction or Raw Tender Specification:
+              </label>
+              <textarea
+                value={aiInstruction}
+                onChange={(e) => setAiInstruction(e.target.value)}
+                placeholder="Examples:&#10;• 'Add a special 10% discount for upfront payment and guarantee 2-hour backup generator response.'&#10;• 'Tailor this for an RFQ in Modjadjiskloof requesting 20 VIP toilets and 3 cold rooms over Easter weekend.'&#10;• 'Make the tone more formal for a SANRAL contractor and highlight local community liaison.'"
+                rows={3}
+                className="w-full p-3 bg-white border border-purple-200 rounded-xl text-xs font-sans placeholder-gray-400 focus:ring-2 focus:ring-purple-400 focus:outline-none"
+              />
+
+              {/* Quick Prompt Presets */}
+              <div className="flex flex-wrap gap-1.5 pt-1">
+                <span className="text-[10px] font-bold text-purple-600 uppercase tracking-wider mr-1">Quick Presets:</span>
+                {[
+                  'Add 10% prepayment discount',
+                  'Emphasize 2-hour standby response',
+                  'Add load shedding generator guarantee',
+                  'Emphasize 100% Tzaneen local points'
+                ].map(preset => (
+                  <button
+                    key={preset}
+                    onClick={() => setAiInstruction(preset)}
+                    className="text-[10px] px-2 py-1 rounded-md bg-white border border-purple-200 hover:border-purple-400 text-purple-900 transition-colors"
+                  >
+                    + {preset}
+                  </button>
+                ))}
+              </div>
+
+              {aiError && (
+                <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs flex items-center space-x-2">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span>{aiError}</span>
+                </div>
+              )}
+
+              {aiSuccessMessage && (
+                <div className="p-3 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center space-x-2">
+                  <Check className="w-4 h-4 shrink-0" />
+                  <span>{aiSuccessMessage}</span>
+                </div>
+              )}
+
+              <div className="flex flex-wrap items-center gap-3 pt-2">
+                <button
+                  onClick={handleAiRefine}
+                  disabled={isAiLoading || !openAiKey}
+                  className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-purple-700 hover:bg-purple-800 disabled:bg-gray-300 text-white text-xs font-bold transition-all shadow-sm"
+                >
+                  {isAiLoading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+                  <span>Polish Current Template with AI</span>
+                </button>
+
+                <button
+                  onClick={handleAiDraftFromScratch}
+                  disabled={isAiLoading || !openAiKey}
+                  className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-indigo-700 hover:bg-indigo-800 disabled:bg-gray-300 text-white text-xs font-bold transition-all shadow-sm"
+                >
+                  {isAiLoading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <FileCheck2 className="w-3.5 h-3.5" />}
+                  <span>Draft New Proposal from Spec</span>
+                </button>
+
+                {editedBodies[currentTemplate.id] && (
+                  <button
+                    onClick={handleResetToTemplateDefault}
+                    className="text-xs text-gray-500 hover:text-gray-900 underline ml-auto"
+                  >
+                    Reset to Default Statutory Text
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Selected Template Description Card */}
+        <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
           <div>
-            <label className="font-bold text-gray-700 block mb-1">Recipient Email Address</label>
-            <input
-              type="email"
-              value={vendorEmail}
-              onChange={e => setVendorEmail(e.target.value)}
-              placeholder="e.g. procurement@icebolethu.co.za"
-              className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-xs"
-            />
+            <div className="flex items-center space-x-2">
+              <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border ${currentTemplate.badgeColor}`}>
+                {currentTemplate.badge}
+              </span>
+              <h4 className="text-sm font-bold text-gray-900">{currentTemplate.title}</h4>
+            </div>
+            <p className="text-xs text-gray-600 mt-1">{currentTemplate.description}</p>
           </div>
         </div>
 
-        {/* Quick Actions Bar */}
-        <div className="flex flex-wrap items-center gap-2.5 pt-1">
+        {/* Interactive Dynamic Form Fields */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
+          {currentTemplate.fields.map(field => (
+            <div key={field.id} className={field.type === 'textarea' ? 'sm:col-span-2' : ''}>
+              <label className="font-bold text-gray-700 block mb-1">{field.label}</label>
+              {field.type === 'textarea' ? (
+                <textarea
+                  value={currentValues[field.id] ?? field.defaultValue}
+                  onChange={e => handleFieldChange(field.id, e.target.value)}
+                  placeholder={field.placeholder}
+                  rows={2}
+                  className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-xs"
+                />
+              ) : (
+                <input
+                  type={field.type || 'text'}
+                  value={currentValues[field.id] ?? field.defaultValue}
+                  onChange={e => handleFieldChange(field.id, e.target.value)}
+                  placeholder={field.placeholder}
+                  className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-xs"
+                />
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* Quick Action Toolbar */}
+        <div className="flex flex-wrap items-center gap-2.5 pt-2 border-t border-gray-100">
           <button
-            onClick={() => handleCopy('vendor_email_body', getEmailPlainText())}
+            onClick={() => handleCopy('full_email', getActiveBody())}
             className="inline-flex items-center space-x-1.5 px-4 py-2.5 rounded-xl bg-[#064E3B] hover:bg-[#075E54] text-white text-xs font-bold transition-all shadow-sm"
           >
-            {copiedKey === 'vendor_email_body' ? <Check className="w-3.5 h-3.5 text-emerald-300" /> : <Copy className="w-3.5 h-3.5" />}
-            <span>{copiedKey === 'vendor_email_body' ? 'Copied Full Email!' : 'Copy Full Email Text'}</span>
+            {copiedKey === 'full_email' ? <Check className="w-3.5 h-3.5 text-emerald-300" /> : <Copy className="w-3.5 h-3.5" />}
+            <span>{copiedKey === 'full_email' ? 'Copied Full Text!' : 'Copy Full Email Text'}</span>
           </button>
 
           <button
-            onClick={() => handleCopy('vendor_email_sub', getEmailSubject())}
+            onClick={() => handleCopy('subject_line', getActiveSubject())}
             className="inline-flex items-center space-x-1.5 px-3.5 py-2.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold transition-colors border border-gray-200"
           >
-            {copiedKey === 'vendor_email_sub' ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-            <span>{copiedKey === 'vendor_email_sub' ? 'Subject Copied!' : 'Copy Subject Line'}</span>
+            {copiedKey === 'subject_line' ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+            <span>{copiedKey === 'subject_line' ? 'Subject Copied!' : 'Copy Subject Line'}</span>
           </button>
 
           <button
@@ -323,161 +646,135 @@ Operating Base: Stand No. 01, Tickyline Village, Lenyenye, Tzaneen, Limpopo, 085
           </button>
 
           <button
-            onClick={() => setShowVendorEmail(!showVendorEmail)}
+            onClick={() => setShowEmailPreview(!showEmailPreview)}
             className="text-xs text-gray-500 hover:text-gray-900 underline ml-auto py-1"
           >
-            {showVendorEmail ? 'Hide Preview' : 'Show Preview'}
+            {showEmailPreview ? 'Hide Preview' : 'Show Live Preview'}
           </button>
         </div>
 
-        {/* Formatted Email Preview Box */}
-        {showVendorEmail && (
-          <div className="bg-gray-50 rounded-xl border border-gray-200 p-5 space-y-4 text-xs text-gray-800 font-sans leading-relaxed">
-            <div className="bg-white p-3 rounded-lg border border-gray-200 space-y-1 text-xs">
-              <div><strong>To:</strong> <span className="text-gray-600">{vendorEmail || '(Enter recipient email)'}</span></div>
-              <div><strong>Subject:</strong> <span className="font-semibold text-[#064E3B]">{getEmailSubject()}</span></div>
+        {/* Live Preview Box */}
+        {showEmailPreview && (
+          <div className="bg-gray-50 rounded-2xl border border-gray-200 p-5 space-y-4 text-xs text-gray-800 font-sans leading-relaxed">
+            <div className="bg-white p-3.5 rounded-xl border border-gray-200 space-y-1.5 text-xs">
+              <div className="flex items-center justify-between">
+                <div><strong>To:</strong> <span className="text-gray-600">{currentValues['email'] || '(Enter recipient email address above)'}</span></div>
+                {editedBodies[currentTemplate.id] && (
+                  <span className="text-[10px] bg-purple-100 text-purple-800 font-bold px-2 py-0.5 rounded-full border border-purple-200">
+                    AI Custom Refinement Active
+                  </span>
+                )}
+              </div>
+              <div>
+                <strong>Subject:</strong> <span className="font-bold text-[#064E3B]">{getActiveSubject()}</span>
+              </div>
             </div>
 
-            <div className="space-y-3 p-1">
-              <p>Dear <strong>{vendorRecipient}</strong>,</p>
-              <p>
-                Please find attached the completed <strong>Supplier Onboarding Form</strong> and supporting documentation for <strong>HLUGISO (Pty) Ltd</strong> to be listed on your Vendor Database.
-              </p>
-
-              <div className="bg-white p-4 rounded-lg border border-gray-200 space-y-2">
-                <strong className="text-[#064E3B] block uppercase text-[11px] tracking-wider">Proposed Goods &amp; Services:</strong>
-                <ul className="space-y-1 list-disc list-inside text-gray-700">
-                  <li><strong>Weekly Funeral &amp; Memorial Infrastructure Hire:</strong> Tents, Draping, Décor, Executive Seating</li>
-                  <li><strong>Mobile Sanitation:</strong> VIP Flushable Restroom Trailers with handwash basins &amp; solar lighting</li>
-                  <li><strong>Mobile Cold-Chain:</strong> Temperature-Controlled Cold Room Trailers (-2°C to +4°C)</li>
-                  <li><strong>Audio-Visual &amp; Sound Reinforcement:</strong> Active PA systems, wireless mics, backup generator</li>
-                  <li><strong>Ceremonial &amp; Cultural Livestock Supply:</strong> Cattle, Goats, Sheep direct from Limpopo farms</li>
-                  <li><strong>Outsourced Funeral Catering &amp; Hospitality Services:</strong> Feasts, arrival refreshments, cleanup</li>
-                </ul>
-              </div>
-
-              <div className="bg-white p-4 rounded-lg border border-gray-200 space-y-2">
-                <strong className="text-gray-900 block uppercase text-[11px] tracking-wider">Attached Supporting Documents:</strong>
-                <ol className="space-y-1 list-decimal list-inside text-gray-700">
-                  <li>Completed &amp; Signed Supplier Onboarding Form</li>
-                  <li>HLUGISO Company Profile (2026 Edition with Equipment Fleet Photos)</li>
-                  <li>CIPC Company Registration Certificate (2019/412705/07)</li>
-                  <li>Certified ID Copy of Managing Director</li>
-                  <li>SARS Tax Compliance Status (PIN Active: 9250830230)</li>
-                  <li>Stamped Bank Account Confirmation Letter (First National Bank)</li>
-                  <li>B-BBEE Sworn Affidavit (Level 1 Contributor &bull; 100% Black Owned EME)</li>
-                  <li>Proof of Business Operating Address (Lenyenye, Tzaneen)</li>
-                </ol>
-              </div>
-
-              <p>
-                Please let us know if any additional information or verification is required to finalize our listing.
-              </p>
-
-              <div className="border-t pt-3 space-y-0.5 text-gray-600">
-                <p className="text-gray-800 font-bold">Kind regards,</p>
-                <p className="font-bold text-gray-900 text-sm">Thabo Makola</p>
-                <p className="text-[#064E3B] font-semibold">Managing Director &bull; HLUGISO (PTY) LTD</p>
-                <p>Direct Line / WhatsApp: +27 83 597 6462 | Emails: info@hlugiso.co.za / thabomakola80@gmail.com</p>
-                <p>Website: www.hlugiso.co.za &bull; Tzaneen, Limpopo</p>
-              </div>
+            <div className="bg-white p-5 rounded-xl border border-gray-200">
+              <pre className="font-sans text-xs text-gray-800 whitespace-pre-wrap leading-relaxed">
+                {getActiveBody()}
+              </pre>
             </div>
           </div>
         )}
       </div>
 
-      {/* Automated Tender Cover Letter Generator */}
+      {/* ========================================================= */}
+      {/* 📄 FORMAL MUNICIPAL TENDER COVER LETTER GENERATOR (PRINTABLE) */}
+      {/* ========================================================= */}
       <div className="bg-white rounded-2xl border border-gray-200 p-6 sm:p-8 shadow-sm space-y-6">
-        <div>
-          <h3 className="text-lg font-black text-gray-900">
-            Formal Procurement &amp; Tender Cover Letter Generator
-          </h3>
-          <p className="text-xs text-gray-500 mt-0.5">
-            Auto-generate a personalized, compliant submission letter for municipal bid boxes or corporate SLAs.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <label className="font-bold text-gray-700 block mb-1">Addressed To / Procuring Entity</label>
-            <input
-              type="text"
-              value={tenderRecipient}
-              onChange={e => setTenderRecipient(e.target.value)}
-              className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-xs"
-            />
+            <h3 className="text-lg font-black text-gray-900">
+              Formal Procurement &amp; Tender Submission Letter
+            </h3>
+            <p className="text-xs text-gray-500 mt-0.5">
+              Printable statutory bid submission letter for physical municipal tender drop boxes or formal SLA binding.
+            </p>
           </div>
 
-          <div>
-            <label className="font-bold text-gray-700 block mb-1">Tender Reference / Scope Subject</label>
-            <input
-              type="text"
-              value={tenderRef}
-              onChange={e => setTenderRef(e.target.value)}
-              className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-xs"
-            />
-          </div>
-        </div>
-
-        <div className="flex items-center space-x-3">
           <button
             onClick={() => setShowCoverLetter(!showCoverLetter)}
             className="px-4 py-2 rounded-xl bg-[#064E3B] hover:bg-[#075E54] text-white text-xs font-bold transition-all shadow-sm"
           >
-            {showCoverLetter ? 'Hide Cover Letter Preview' : 'Generate Cover Letter Preview'}
+            {showCoverLetter ? 'Hide Tender Letter' : 'Open Printable Tender Letter'}
           </button>
         </div>
 
-        {/* Generated Letter Preview */}
         {showCoverLetter && (
-          <div className="p-8 bg-gray-50 rounded-2xl border border-gray-300 space-y-6 text-xs text-gray-800 leading-relaxed font-sans shadow-inner">
-            <div className="flex justify-between items-center border-b pb-4">
-              <div className="font-mono text-xs text-gray-500">Date: {new Date().toLocaleDateString('en-ZA')}</div>
-              <button
-                onClick={handlePrintCoverLetter}
-                className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-gray-900 text-white text-xs font-bold hover:bg-black transition-colors"
-              >
-                <Printer className="w-3.5 h-3.5" />
-                <span>Print Cover Letter</span>
-              </button>
+          <div className="space-y-4 pt-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+              <div>
+                <label className="font-bold text-gray-700 block mb-1">Addressed To / Procuring Entity</label>
+                <input
+                  type="text"
+                  value={tenderRecipient}
+                  onChange={e => setTenderRecipient(e.target.value)}
+                  className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-xs"
+                />
+              </div>
+
+              <div>
+                <label className="font-bold text-gray-700 block mb-1">Tender Reference / Scope Subject</label>
+                <input
+                  type="text"
+                  value={tenderRef}
+                  onChange={e => setTenderRef(e.target.value)}
+                  className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-xs"
+                />
+              </div>
             </div>
 
-            <div className="space-y-1">
-              <strong>TO:</strong><br />
-              {tenderRecipient}<br />
-              Greater Tzaneen / Mopani District / Limpopo
-            </div>
+            {/* Generated Letter Preview */}
+            <div className="p-8 bg-gray-50 rounded-2xl border border-gray-300 space-y-6 text-xs text-gray-800 leading-relaxed font-sans shadow-inner">
+              <div className="flex justify-between items-center border-b pb-4">
+                <div className="font-mono text-xs text-gray-500">Date: {new Date().toLocaleDateString('en-ZA')}</div>
+                <button
+                  onClick={() => window.print()}
+                  className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-gray-900 text-white text-xs font-bold hover:bg-black transition-colors"
+                >
+                  <Printer className="w-3.5 h-3.5" />
+                  <span>Print Formal Submission</span>
+                </button>
+              </div>
 
-            <div className="font-bold text-sm text-[#064E3B] border-b pb-1">
-              RE: {tenderRef}
-            </div>
+              <div className="space-y-1">
+                <strong>TO:</strong><br />
+                {tenderRecipient}<br />
+                Greater Tzaneen / Mopani District / Limpopo
+              </div>
 
-            <p>
-              Dear Procurement Evaluation Committee,
-            </p>
+              <div className="font-bold text-sm text-[#064E3B] border-b pb-1">
+                RE: {tenderRef}
+              </div>
 
-            <p>
-              <strong>HLUGISO (Pty) Ltd</strong> (Registration Number: <strong>2019/412705/07</strong>) is pleased to submit our formal commercial proposal and statutory compliance credentials for your evaluation.
-            </p>
+              <p>
+                Dear Procurement Evaluation Committee,
+              </p>
 
-            <p>
-              As an established, 100% Black-owned enterprise headquartered in Tzaneen, Limpopo, HLUGISO operates with full statutory regularity, verified on the National Treasury Central Supplier Database under Supplier Number <strong>MAAA0818606</strong>, holding CIDB Contractor Grading <strong>Grade 1CE</strong>, SARS Tax Compliance Status PIN Active (Ref: <strong>9250830230</strong>), and Level 1 B-BBEE recognition.
-            </p>
+              <p>
+                <strong>HLUGISO (Pty) Ltd</strong> (Registration Number: <strong>2019/412705/07</strong>) is pleased to submit our formal commercial proposal and statutory compliance credentials for your evaluation.
+              </p>
 
-            <p>
-              We maintain direct, localized fleet readiness across Greater Tzaneen, Polokwane, and surrounding Limpopo corridors, specializing in turnkey event infrastructure, mobile cold-chain refrigeration units, executive VIP mobile restrooms, sound reinforcement, and specialized logistics.
-            </p>
+              <p>
+                As an established, 100% Black-owned enterprise headquartered in Tzaneen, Limpopo, HLUGISO operates with full statutory regularity, verified on the National Treasury Central Supplier Database under Supplier Number <strong>MAAA0818606</strong>, holding CIDB Contractor Grading <strong>Grade 1CE</strong>, SARS Tax Compliance Status PIN Active (Ref: <strong>9250830230</strong>), and Level 1 B-BBEE recognition.
+              </p>
 
-            <p>
-              All accompanying company profiles, tax verification certificates, CIDB active confirmations, and commercial fee schedules are attached hereto. We confirm our absolute capacity to execute within required operational service levels.
-            </p>
+              <p>
+                We maintain direct, localized fleet readiness across Greater Tzaneen, Polokwane, and surrounding Limpopo corridors, specializing in turnkey event infrastructure, mobile cold-chain refrigeration units, executive VIP mobile restrooms, sound reinforcement, and specialized logistics.
+              </p>
 
-            <div className="pt-4 border-t border-gray-200">
-              Yours faithfully,<br /><br />
-              <strong>Thabo Makola</strong><br />
-              Managing Director<br />
-              HLUGISO (PTY) LTD<br />
-              Direct / WhatsApp: +27 83 597 6462 | info@hlugiso.co.za
+              <p>
+                All accompanying company profiles, tax verification certificates, CIDB active confirmations, and commercial fee schedules are attached hereto. We confirm our absolute capacity to execute within required operational service levels.
+              </p>
+
+              <div className="pt-4 border-t border-gray-200">
+                Yours faithfully,<br /><br />
+                <strong>Thabo Makola</strong><br />
+                Managing Director<br />
+                HLUGISO (PTY) LTD<br />
+                Direct / WhatsApp: +27 83 597 6462 | info@hlugiso.co.za
+              </div>
             </div>
           </div>
         )}
