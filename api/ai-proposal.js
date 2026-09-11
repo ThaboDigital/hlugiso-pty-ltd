@@ -6,7 +6,8 @@ COMPANY STATUTORY CREDENTIALS:
 - CIPC Registration: 2019 / 412705 / 07
 - National Treasury CSD Supplier No: MAAA0818606 (Verified & Tax Compliant)
 - CIDB Contractor Grading: Grade 1CE (Civil Engineering, CRS: 11116631)
-- SARS Tax Compliance PIN: Active (9250830230)
+- SARS Tax Reference Number: 9250830230
+- SARS Tax Compliance Status (TCS) PIN: E2E415837F
 - B-BBEE Rating: Level 1 Contributor (135% Procurement Recognition, 100% Black Owned EME)
 - Managing Director: Thabo Makola
 - Direct Contact / WhatsApp: +27 83 597 6462 | Email: info@hlugiso.co.za
@@ -74,7 +75,7 @@ Please rewrite or polish this text according to the user's instructions while pr
 SPECIFICATION / REQUEST:
 "${prompt}"
 
-Include all applicable statutory details (CSD MAAA0818606, CIDB Grade 1CE, SARS PIN 9250830230, Level 1 B-BBEE), localized Tzaneen advantages, equipment fleet specifications, and executive signature by Managing Director Thabo Makola. Format clearly with Subject line, Dear Sir/Madam, structured sections, and closing.`;
+Include all applicable statutory details (CSD MAAA0818606, CIDB Grade 1CE, SARS Tax Ref 9250830230, SARS TCS PIN E2E415837F, Level 1 B-BBEE), localized Tzaneen advantages, equipment fleet specifications, and executive signature by Managing Director Thabo Makola. Format clearly with Subject line, Dear Sir/Madam, structured sections, and closing.`;
     }
 
     const openAiResponse = await fetch('https://api.openai.com/v1/chat/completions', {

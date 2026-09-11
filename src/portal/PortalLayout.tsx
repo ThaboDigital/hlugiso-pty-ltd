@@ -15,7 +15,8 @@ import {
   Menu, 
   X, 
   ChevronRight,
-  Lock
+  Lock,
+  RotateCcw
 } from 'lucide-react';
 import { usePortal } from './PortalContext';
 import { PortalAuthModal } from './PortalAuthModal';
@@ -186,6 +187,15 @@ export const PortalLayout: React.FC<PortalLayoutProps> = ({ onBackToSite }) => {
           </button>
 
           <button
+            onClick={resetToDefaults}
+            className="w-full flex items-center space-x-2.5 px-3 py-2 rounded-xl text-gray-400 hover:bg-gray-900 hover:text-amber-400 transition-colors"
+            title="Reset to clean production state"
+          >
+            <RotateCcw className="w-4 h-4 text-amber-500" />
+            <span>Reset to Clean State</span>
+          </button>
+
+          <button
             onClick={onBackToSite}
             className="w-full flex items-center space-x-2.5 px-3 py-2 rounded-xl text-gray-400 hover:bg-gray-900 hover:text-white transition-colors"
           >
@@ -248,9 +258,10 @@ export const PortalLayout: React.FC<PortalLayoutProps> = ({ onBackToSite }) => {
               )}
             </button>
           ))}
-          <div className="pt-3 border-t border-gray-800 flex justify-between">
-            <button onClick={exportDatabase} className="text-xs text-gray-400">Backup DB</button>
-            <button onClick={logout} className="text-xs text-red-400">Lock Portal</button>
+          <div className="pt-3 border-t border-gray-800 flex items-center justify-between text-xs">
+            <button onClick={exportDatabase} className="text-gray-400 hover:text-white">Backup DB</button>
+            <button onClick={resetToDefaults} className="text-amber-400 hover:text-amber-300">Reset Data</button>
+            <button onClick={logout} className="text-red-400 hover:text-red-300">Lock Portal</button>
           </div>
         </div>
       )}

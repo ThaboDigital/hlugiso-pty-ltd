@@ -58,6 +58,36 @@ interface PortalContextType {
 
 const PortalContext = createContext<PortalContextType | undefined>(undefined);
 
+const PROD_DATA_VERSION = 'hlugiso_prod_v2';
+
+// Clean out stale mock data from previous demo sessions if present
+if (typeof window !== 'undefined') {
+  const currentVersion = localStorage.getItem('hlugiso_data_version');
+  if (currentVersion !== PROD_DATA_VERSION) {
+    const savedQuotes = localStorage.getItem('hlugiso_quotes');
+    if (savedQuotes && (savedQuotes.includes('HLU-Q-2026-042') || savedQuotes.includes('Phala'))) {
+      localStorage.removeItem('hlugiso_quotes');
+    }
+    const savedInvoices = localStorage.getItem('hlugiso_invoices');
+    if (savedInvoices && (savedInvoices.includes('HLU-INV-2026-028') || savedInvoices.includes('Phala'))) {
+      localStorage.removeItem('hlugiso_invoices');
+    }
+    const savedRfqs = localStorage.getItem('hlugiso_rfqs');
+    if (savedRfqs && (savedRfqs.includes('rfq-1') || savedRfqs.includes('Baloyi'))) {
+      localStorage.removeItem('hlugiso_rfqs');
+    }
+    const savedClients = localStorage.getItem('hlugiso_clients');
+    if (savedClients && (savedClients.includes('cli-1') || savedClients.includes('Phala'))) {
+      localStorage.removeItem('hlugiso_clients');
+    }
+    const savedFleet = localStorage.getItem('hlugiso_fleet');
+    if (savedFleet && (savedFleet.includes('Mabotja') || savedFleet.includes('Khosa'))) {
+      localStorage.removeItem('hlugiso_fleet');
+    }
+    localStorage.setItem('hlugiso_data_version', PROD_DATA_VERSION);
+  }
+}
+
 export const PortalProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
     return localStorage.getItem('hlugiso_auth_session') === 'true';
@@ -302,13 +332,19 @@ export const PortalProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   };
 
   const resetToDefaults = () => {
-    if (window.confirm('Reset all portal records to default sample data? Your custom edits will be replaced.')) {
-      setQuotes(DEFAULT_QUOTES);
-      setInvoices(DEFAULT_INVOICES);
-      setRfqs(DEFAULT_RFQS);
+    if (window.confirm('Reset all portal records to clean production defaults? Quotations, invoices, RFQs, and client records will be cleared, and fleet units reset to Tzaneen Base Depot.')) {
+      setQuotes([]);
+      setInvoices([]);
+      setRfqs([]);
       setFleet(DEFAULT_FLEET_UNITS);
-      setClients(DEFAULT_CLIENTS);
+      setClients([]);
       setBanking(DEFAULT_BANKING_DETAILS);
+      localStorage.removeItem('hlugiso_quotes');
+      localStorage.removeItem('hlugiso_invoices');
+      localStorage.removeItem('hlugiso_rfqs');
+      localStorage.removeItem('hlugiso_clients');
+      localStorage.setItem('hlugiso_fleet', JSON.stringify(DEFAULT_FLEET_UNITS));
+      localStorage.setItem('hlugiso_banking', JSON.stringify(DEFAULT_BANKING_DETAILS));
     }
   };
 

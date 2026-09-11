@@ -110,8 +110,12 @@ export const RfqManager: React.FC<RfqManagerProps> = ({ onConvertRfqToQuote }) =
       {/* RFQ Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredRfqs.length === 0 ? (
-          <div className="col-span-full bg-white p-12 rounded-2xl border border-gray-200 text-center text-gray-400">
-            No RFQ leads in this category.
+          <div className="col-span-full bg-white py-16 rounded-2xl border border-gray-200 text-center p-8 space-y-3">
+            <Inbox className="w-10 h-10 text-gray-300 mx-auto" />
+            <h3 className="font-bold text-gray-800 text-sm">No Inbound RFQ Leads</h3>
+            <p className="text-xs text-gray-400 max-w-md mx-auto">
+              When clients or organisations request a quotation on your public website, their submissions land directly in this inbox for immediate dispatch.
+            </p>
           </div>
         ) : (
           filteredRfqs.map(rfq => (

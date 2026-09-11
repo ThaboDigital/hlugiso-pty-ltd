@@ -9,7 +9,8 @@ import {
   CreditCard, 
   ExternalLink,
   ShieldCheck,
-  X
+  X,
+  Receipt
 } from 'lucide-react';
 import { usePortal } from '../PortalContext';
 import { InvoiceDocument, InvoiceStatus, LineItem } from '../types';
@@ -244,8 +245,12 @@ export const InvoicesManager: React.FC = () => {
             <tbody className="divide-y divide-gray-100">
               {filteredInvoices.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="text-center py-10 text-gray-400">
-                    No invoices found matching your search.
+                  <td colSpan={7} className="text-center py-16 text-gray-400 space-y-3">
+                    <Receipt className="w-10 h-10 text-gray-300 mx-auto mb-2" />
+                    <div className="font-bold text-gray-700 text-sm">No Invoices Found</div>
+                    <div className="text-xs text-gray-400 max-w-sm mx-auto">
+                      Your billing register is clean. Click &ldquo;+ Create Direct Invoice&rdquo; or convert an accepted quote to issue an official tax invoice.
+                    </div>
                   </td>
                 </tr>
               ) : (

@@ -53,7 +53,7 @@ ATTACHED SUPPORTING COMPLIANCE DOCUMENTS:
 2. Official HLUGISO Company Profile (2026 Edition with Equipment Fleet Portfolio)
 3. CIPC Company Registration Certificate (Reg: 2019/412705/07)
 4. Certified ID Copy of Managing Director
-5. SARS Tax Compliance Status (PIN Active: 9250830230)
+5. SARS Tax Compliance Status (TCS PIN: ${v.taxPin || 'E2E415837F'} • Tax Ref: 9250830230)
 6. Stamped Bank Account Confirmation Letter (First National Bank)
 7. B-BBEE Sworn Affidavit (Level 1 Contributor • 100% Black Owned EME)
 8. Proof of Business Operating Address (Lenyenye, Tzaneen)
@@ -149,7 +149,7 @@ HLUGISO (Pty) Ltd (Registration No: 2019/412705/07) is pleased to submit our for
 STATUTORY REGULARITY & PREFERENTIAL PROCUREMENT STATUS:
 • CSD Verified Supplier Number: MAAA0818606 (Tax Compliant)
 • CIDB Contractor Grading: Grade 1CE (CRS Number: 11116631)
-• SARS Tax Compliance Status: PIN Active (Ref: 9250830230)
+• SARS Tax Compliance Status: PIN Active (TCS PIN: ${v.taxPin || 'E2E415837F'} • Tax Ref: 9250830230)
 • B-BBEE Contribution Level: Level 1 Contributor (135% Procurement Recognition)
 • Enterprise Classification: 100% Black Owned / Youth Owned EME
 • Local Economic Footprint: Registered Head Office & Operating Depot located within Greater Tzaneen Municipality (Stand No 01, Tickyline Village, Lenyenye, Tzaneen). HLUGISO qualifies for MAXIMUM SPECIFIC GOALS POINTS for local enterprise preference under the Preferential Procurement Policy Framework Act (PPPFA 2022 Regulations).

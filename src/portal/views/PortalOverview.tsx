@@ -238,36 +238,44 @@ export const PortalOverview: React.FC<PortalOverviewProps> = ({
           </div>
 
           <div className="divide-y divide-gray-100">
-            {quotes.slice(0, 4).map(q => (
-              <div 
-                key={q.id}
-                className="p-4 hover:bg-gray-50 flex items-center justify-between gap-3 text-xs"
-              >
-                <div className="space-y-0.5">
-                  <div className="flex items-center space-x-2">
-                    <span className="font-bold text-gray-900">{q.quoteNumber}</span>
-                    <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded ${
-                      q.status === 'accepted' ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-100 text-gray-700'
-                    }`}>
-                      {q.status}
-                    </span>
-                  </div>
-                  <div className="text-gray-600 font-medium">{q.clientName}</div>
-                  <div className="text-[11px] text-gray-400">{q.eventLocation} &bull; {q.date}</div>
-                </div>
-
-                <div className="text-right space-y-1 shrink-0">
-                  <div className="font-black text-sm text-gray-900">R {q.total.toLocaleString()}</div>
-                  <button
-                    onClick={() => setSelectedDoc({ doc: q, type: 'quote' })}
-                    className="inline-flex items-center space-x-1 text-[11px] font-bold text-[#064E3B] hover:underline"
-                  >
-                    <span>View / Print</span>
-                    <ExternalLink className="w-3 h-3" />
-                  </button>
-                </div>
+            {quotes.length === 0 ? (
+              <div className="p-8 text-center text-gray-400 space-y-2">
+                <FileText className="w-8 h-8 mx-auto text-gray-300" />
+                <p className="font-semibold text-xs text-gray-600">No active quotations yet</p>
+                <p className="text-[11px] text-gray-400">Click &ldquo;Create New Quote&rdquo; above to generate and print your first commercial quote.</p>
               </div>
-            ))}
+            ) : (
+              quotes.slice(0, 4).map(q => (
+                <div 
+                  key={q.id}
+                  className="p-4 hover:bg-gray-50 flex items-center justify-between gap-3 text-xs"
+                >
+                  <div className="space-y-0.5">
+                    <div className="flex items-center space-x-2">
+                      <span className="font-bold text-gray-900">{q.quoteNumber}</span>
+                      <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded ${
+                        q.status === 'accepted' ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-100 text-gray-700'
+                      }`}>
+                        {q.status}
+                      </span>
+                    </div>
+                    <div className="text-gray-600 font-medium">{q.clientName}</div>
+                    <div className="text-[11px] text-gray-400">{q.eventLocation} &bull; {q.date}</div>
+                  </div>
+
+                  <div className="text-right space-y-1 shrink-0">
+                    <div className="font-black text-sm text-gray-900">R {q.total.toLocaleString()}</div>
+                    <button
+                      onClick={() => setSelectedDoc({ doc: q, type: 'quote' })}
+                      className="inline-flex items-center space-x-1 text-[11px] font-bold text-[#064E3B] hover:underline"
+                    >
+                      <span>View / Print</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
 
@@ -287,41 +295,49 @@ export const PortalOverview: React.FC<PortalOverviewProps> = ({
           </div>
 
           <div className="divide-y divide-gray-100">
-            {invoices.slice(0, 4).map(inv => (
-              <div 
-                key={inv.id}
-                className="p-4 hover:bg-gray-50 flex items-center justify-between gap-3 text-xs"
-              >
-                <div className="space-y-0.5">
-                  <div className="flex items-center space-x-2">
-                    <span className="font-bold text-gray-900">{inv.invoiceNumber}</span>
-                    <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded ${
-                      inv.status === 'paid'
-                        ? 'bg-emerald-100 text-emerald-800'
-                        : inv.status === 'deposit_paid'
-                        ? 'bg-blue-100 text-blue-800'
-                        : 'bg-amber-100 text-amber-800'
-                    }`}>
-                      {inv.status.replace('_', ' ')}
-                    </span>
-                  </div>
-                  <div className="text-gray-600 font-medium">{inv.clientName}</div>
-                  <div className="text-[11px] text-gray-400">Due: {inv.dueDate}</div>
-                </div>
-
-                <div className="text-right space-y-1 shrink-0">
-                  <div className="font-black text-sm text-gray-900">R {inv.total.toLocaleString()}</div>
-                  <div className="text-[11px] text-red-600 font-semibold">Bal: R {inv.balanceDue.toLocaleString()}</div>
-                  <button
-                    onClick={() => setSelectedDoc({ doc: inv, type: 'invoice' })}
-                    className="inline-flex items-center space-x-1 text-[11px] font-bold text-[#064E3B] hover:underline"
-                  >
-                    <span>View / Print</span>
-                    <ExternalLink className="w-3 h-3" />
-                  </button>
-                </div>
+            {invoices.length === 0 ? (
+              <div className="p-8 text-center text-gray-400 space-y-2">
+                <Receipt className="w-8 h-8 mx-auto text-gray-300" />
+                <p className="font-semibold text-xs text-gray-600">No invoices issued yet</p>
+                <p className="text-[11px] text-gray-400">Accepted quotations can be converted into tax invoices with 1-click.</p>
               </div>
-            ))}
+            ) : (
+              invoices.slice(0, 4).map(inv => (
+                <div 
+                  key={inv.id}
+                  className="p-4 hover:bg-gray-50 flex items-center justify-between gap-3 text-xs"
+                >
+                  <div className="space-y-0.5">
+                    <div className="flex items-center space-x-2">
+                      <span className="font-bold text-gray-900">{inv.invoiceNumber}</span>
+                      <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded ${
+                        inv.status === 'paid'
+                          ? 'bg-emerald-100 text-emerald-800'
+                          : inv.status === 'deposit_paid'
+                          ? 'bg-blue-100 text-blue-800'
+                          : 'bg-amber-100 text-amber-800'
+                      }`}>
+                        {inv.status.replace('_', ' ')}
+                      </span>
+                    </div>
+                    <div className="text-gray-600 font-medium">{inv.clientName}</div>
+                    <div className="text-[11px] text-gray-400">Due: {inv.dueDate}</div>
+                  </div>
+
+                  <div className="text-right space-y-1 shrink-0">
+                    <div className="font-black text-sm text-gray-900">R {inv.total.toLocaleString()}</div>
+                    <div className="text-[11px] text-red-600 font-semibold">Bal: R {inv.balanceDue.toLocaleString()}</div>
+                    <button
+                      onClick={() => setSelectedDoc({ doc: inv, type: 'invoice' })}
+                      className="inline-flex items-center space-x-1 text-[11px] font-bold text-[#064E3B] hover:underline"
+                    >
+                      <span>View / Print</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
       </div>

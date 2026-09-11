@@ -13,7 +13,8 @@ import {
   X,
   PlusCircle,
   Truck,
-  CheckCircle2
+  CheckCircle2,
+  FileText
 } from 'lucide-react';
 import { usePortal } from '../PortalContext';
 import { QuoteDocument, LineItem, DocumentStatus } from '../types';
@@ -242,8 +243,12 @@ export const QuotesManager: React.FC<QuotesManagerProps> = ({
             <tbody className="divide-y divide-gray-100">
               {filteredQuotes.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="text-center py-10 text-gray-400">
-                    No quotations found matching your search criteria.
+                  <td colSpan={6} className="text-center py-16 text-gray-400 space-y-3">
+                    <FileText className="w-10 h-10 text-gray-300 mx-auto mb-2" />
+                    <div className="font-bold text-gray-700 text-sm">No Quotations Found</div>
+                    <div className="text-xs text-gray-400 max-w-sm mx-auto">
+                      Your quotation ledger is clean. Click &ldquo;+ New Quotation&rdquo; above to generate and print your first commercial quote.
+                    </div>
                   </td>
                 </tr>
               ) : (

@@ -35,6 +35,7 @@ export const COMPANY_DETAILS = {
   companyType: 'Private Company',
   businessStatus: 'In Business',
   taxNumber: '9250830230',
+  taxPin: 'E2E415837F',
   taxStatus: 'Tax Compliance Status PIN Issued',
   csdNumber: 'MAAA0818606',
   bbbeeStatus: 'Level 1 Contributor (100% Black Owned)',

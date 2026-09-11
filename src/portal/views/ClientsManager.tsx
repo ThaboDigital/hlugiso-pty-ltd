@@ -155,14 +155,30 @@ export const ClientsManager: React.FC<ClientsManagerProps> = ({ onQuoteForClient
 
       {/* Clients Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredClients.map(client => (
-          <div 
-            key={client.id}
-            className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm space-y-4 hover:border-teal-700/50 transition-all flex flex-col justify-between"
-          >
-            <div className="space-y-3">
-              <div className="flex justify-between items-start">
-                <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
+        {filteredClients.length === 0 ? (
+          <div className="col-span-full py-16 bg-white rounded-2xl border border-gray-200 text-center p-8 space-y-3">
+            <Users className="w-10 h-10 text-gray-300 mx-auto" />
+            <h3 className="font-bold text-gray-800 text-sm">No Client Records Found</h3>
+            <p className="text-xs text-gray-400 max-w-sm mx-auto">
+              Your client directory is currently clean. Click &ldquo;+ Add New Partner&rdquo; to add partner funeral undertakers, burial societies, or private clients.
+            </p>
+            <button
+              onClick={handleOpenAdd}
+              className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-[#064E3B] text-white text-xs font-bold hover:bg-[#075E54] shadow-sm transition-all"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Add First Partner</span>
+            </button>
+          </div>
+        ) : (
+          filteredClients.map(client => (
+            <div 
+              key={client.id}
+              className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm space-y-4 hover:border-teal-700/50 transition-all flex flex-col justify-between"
+            >
+              <div className="space-y-3">
+                <div className="flex justify-between items-start">
+                  <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
                   {client.type}
                 </span>
 
@@ -239,7 +255,7 @@ export const ClientsManager: React.FC<ClientsManagerProps> = ({ onQuoteForClient
               </a>
             </div>
           </div>
-        ))}
+        )))}
       </div>
 
       {/* ADD / EDIT CLIENT MODAL */}

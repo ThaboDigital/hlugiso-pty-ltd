@@ -21,6 +21,45 @@
 }
 
 @media print {
+  @page {
+    size: A4 portrait;
+    margin: 0;
+  }
+
+  /* When printing letterhead specifically */
+  body.printing-letterhead {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #FFFFFF !important;
+  }
+
+  body.printing-letterhead * {
+    visibility: hidden !important;
+  }
+
+  body.printing-letterhead #official-letterhead-print,
+  body.printing-letterhead #official-letterhead-print * {
+    visibility: visible !important;
+  }
+
+  body.printing-letterhead #official-letterhead-print {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 210mm !important;
+    height: 297mm !important;
+    max-height: 297mm !important;
+    margin: 0 !important;
+    padding: 12mm 14mm 12mm 14mm !important;
+    box-sizing: border-box !important;
+    background: #FFFFFF !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+    overflow: hidden !important;
+    z-index: 999999 !important;
+  }
+
   .no-print {
     display: none !important;
   }

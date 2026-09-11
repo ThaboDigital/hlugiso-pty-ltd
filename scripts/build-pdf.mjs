@@ -416,7 +416,7 @@ const htmlContent = `<!DOCTYPE html>
           </div>
           <div class="gov-item">
             <span class="gov-label">SARS Tax Compliance Status:</span>
-            <span class="gov-val">Compliant &bull; Tax Reference: <strong>9250830230</strong> (TCS PIN Active)</span>
+            <span class="gov-val">Compliant &bull; Tax Ref: <strong>9250830230</strong> &bull; TCS PIN: <strong>E2E415837F</strong></span>
           </div>
           <div class="gov-item">
             <span class="gov-label">Executive Leadership:</span>

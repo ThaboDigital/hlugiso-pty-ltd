@@ -30,14 +30,16 @@ import {
   generateCustomProposalWithAI 
 } from '../services/aiService';
 import { sendEmailViaResend } from '../services/emailService';
+import { PrintableLetterheadModal } from '../components/PrintableLetterheadModal';
 
 export const TenderHub: React.FC = () => {
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
   // Formal Procurement Tender Cover Letter State
-  const [tenderRecipient, setTenderRecipient] = useState<string>('The Municipal Procurement Officer / Supply Chain Committee');
+  const [tenderRecipient, setTenderRecipient] = useState<string>('The Municipal Procurement Officer / Supply Chain Committee\nGreater Tzaneen / Mopani District / Limpopo');
   const [tenderRef, setTenderRef] = useState<string>('RFQ / Tender Commercial Submission: Event Infrastructure & Fleet Supply');
   const [showCoverLetter, setShowCoverLetter] = useState<boolean>(false);
+  const [isLetterheadModalOpen, setIsLetterheadModalOpen] = useState<boolean>(false);
 
   // Template Dispatcher State
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('vendor_application');
@@ -83,8 +85,29 @@ export const TenderHub: React.FC = () => {
     setTimeout(() => setAiSuccessMessage(null), 3000);
   };
 
+  // SARS Tax PIN Dynamic State (Editable from Dashboard & Persisted)
+  const [taxPin, setTaxPin] = useState<string>(() => {
+    return localStorage.getItem('hlugiso_tax_pin') || (COMPANY_DETAILS as any).taxPin || 'E2E415837F';
+  });
+  const [isEditingTaxPin, setIsEditingTaxPin] = useState<boolean>(false);
+  const [tempTaxPinInput, setTempTaxPinInput] = useState<string>(taxPin);
+
+  const handleSaveTaxPin = () => {
+    if (tempTaxPinInput.trim()) {
+      const cleanPin = tempTaxPinInput.trim().toUpperCase();
+      setTaxPin(cleanPin);
+      localStorage.setItem('hlugiso_tax_pin', cleanPin);
+      setIsEditingTaxPin(false);
+      setCopiedKey('taxpin_saved');
+      setTimeout(() => setCopiedKey(null), 2500);
+    }
+  };
+
   const currentTemplate = COMMUNICATION_TEMPLATES.find(t => t.id === selectedTemplateId) || COMMUNICATION_TEMPLATES[0];
-  const currentValues = fieldValues[currentTemplate.id] || {};
+  const currentValues = {
+    taxPin: taxPin,
+    ...(fieldValues[currentTemplate.id] || {})
+  };
 
   const handleFieldChange = (fieldId: string, val: string) => {
     setFieldValues(prev => ({
@@ -341,10 +364,69 @@ export const TenderHub: React.FC = () => {
             </button>
           </div>
 
-          {/* SARS Tax Reference */}
+          {/* SARS Tax Compliance Status PIN (TCS PIN) - Editable */}
+          <div className="bg-white p-4 rounded-xl border-2 border-emerald-300 bg-emerald-50/20 shadow-sm flex flex-col justify-between space-y-2">
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider block">
+                  SARS Tax Compliance (TCS) PIN
+                </span>
+                {isEditingTaxPin ? (
+                  <div className="flex items-center space-x-1.5 mt-1">
+                    <input
+                      type="text"
+                      value={tempTaxPinInput}
+                      onChange={(e) => setTempTaxPinInput(e.target.value)}
+                      placeholder="e.g. E2E415837F"
+                      className="p-1 bg-white border border-emerald-400 rounded text-xs font-mono font-bold uppercase w-28 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    />
+                    <button
+                      onClick={handleSaveTaxPin}
+                      className="px-2 py-1 bg-[#064E3B] text-white rounded text-[10px] font-bold hover:bg-emerald-800"
+                    >
+                      Save
+                    </button>
+                    <button
+                      onClick={() => { setIsEditingTaxPin(false); setTempTaxPinInput(taxPin); }}
+                      className="px-2 py-1 bg-gray-200 text-gray-700 rounded text-[10px] font-bold hover:bg-gray-300"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <span className="text-base font-black text-[#064E3B] font-mono tracking-wider">{taxPin}</span>
+                )}
+              </div>
+
+              {!isEditingTaxPin && (
+                <div className="flex items-center space-x-1">
+                  <button
+                    onClick={() => { setIsEditingTaxPin(true); setTempTaxPinInput(taxPin); }}
+                    className="p-2 rounded-lg bg-emerald-100 hover:bg-emerald-200 text-emerald-900 transition-colors"
+                    title="Change Annual Tax PIN"
+                  >
+                    <Sliders className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() => handleCopy('taxpin', taxPin)}
+                    className="p-2 rounded-lg bg-gray-100 hover:bg-[#064E3B] hover:text-white transition-colors"
+                    title="Copy Tax PIN"
+                  >
+                    {copiedKey === 'taxpin' ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
+                  </button>
+                </div>
+              )}
+            </div>
+            <div className="text-[10px] text-gray-500 flex items-center justify-between">
+              <span>Annual PIN (editable anytime)</span>
+              {copiedKey === 'taxpin_saved' && <span className="text-emerald-600 font-bold">PIN Updated!</span>}
+            </div>
+          </div>
+
+          {/* SARS Company Income Tax Reference Number */}
           <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between">
             <div>
-              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">SARS Tax Reference</span>
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">SARS Company Tax Ref No.</span>
               <span className="text-base font-black text-gray-900 font-mono">{COMPANY_DETAILS.taxNumber}</span>
             </div>
             <button
@@ -781,12 +863,25 @@ export const TenderHub: React.FC = () => {
             </p>
           </div>
 
-          <button
-            onClick={() => setShowCoverLetter(!showCoverLetter)}
-            className="px-4 py-2 rounded-xl bg-[#064E3B] hover:bg-[#075E54] text-white text-xs font-bold transition-all shadow-sm"
-          >
-            {showCoverLetter ? 'Hide Tender Letter' : 'Open Printable Tender Letter'}
-          </button>
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
+            <a
+              href="/templates/hlugiso-official-letterhead.html"
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold transition-colors border border-gray-200"
+            >
+              <ExternalLink className="w-3.5 h-3.5" />
+              <span>Standalone Template</span>
+            </a>
+
+            <button
+              onClick={() => setIsLetterheadModalOpen(true)}
+              className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-[#064E3B] hover:bg-[#075E54] text-white text-xs font-bold transition-all shadow-md active:scale-95"
+            >
+              <Printer className="w-3.5 h-3.5" />
+              <span>Open &amp; Print Official Letterhead</span>
+            </button>
+          </div>
         </div>
 
         {showCoverLetter && (
@@ -794,10 +889,10 @@ export const TenderHub: React.FC = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
               <div>
                 <label className="font-bold text-gray-700 block mb-1">Addressed To / Procuring Entity</label>
-                <input
-                  type="text"
+                <textarea
                   value={tenderRecipient}
                   onChange={e => setTenderRecipient(e.target.value)}
+                  rows={2}
                   className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-xs"
                 />
               </div>
@@ -813,23 +908,22 @@ export const TenderHub: React.FC = () => {
               </div>
             </div>
 
-            {/* Generated Letter Preview */}
+            {/* Generated Letter Preview Card */}
             <div className="p-8 bg-gray-50 rounded-2xl border border-gray-300 space-y-6 text-xs text-gray-800 leading-relaxed font-sans shadow-inner">
               <div className="flex justify-between items-center border-b pb-4">
                 <div className="font-mono text-xs text-gray-500">Date: {new Date().toLocaleDateString('en-ZA')}</div>
                 <button
-                  onClick={() => window.print()}
-                  className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-gray-900 text-white text-xs font-bold hover:bg-black transition-colors"
+                  onClick={() => setIsLetterheadModalOpen(true)}
+                  className="inline-flex items-center space-x-1.5 px-3.5 py-1.5 rounded-lg bg-[#064E3B] text-white text-xs font-bold hover:bg-[#075E54] transition-colors shadow-sm"
                 >
                   <Printer className="w-3.5 h-3.5" />
-                  <span>Print Formal Submission</span>
+                  <span>Print on Official Letterhead (A4)</span>
                 </button>
               </div>
 
               <div className="space-y-1">
                 <strong>TO:</strong><br />
-                {tenderRecipient}<br />
-                Greater Tzaneen / Mopani District / Limpopo
+                <span className="whitespace-pre-line">{tenderRecipient}</span>
               </div>
 
               <div className="font-bold text-sm text-[#064E3B] border-b pb-1">
@@ -845,7 +939,7 @@ export const TenderHub: React.FC = () => {
               </p>
 
               <p>
-                As an established, 100% Black-owned enterprise headquartered in Tzaneen, Limpopo, HLUGISO operates with full statutory regularity, verified on the National Treasury Central Supplier Database under Supplier Number <strong>MAAA0818606</strong>, holding CIDB Contractor Grading <strong>Grade 1CE</strong>, SARS Tax Compliance Status PIN Active (Ref: <strong>9250830230</strong>), and Level 1 B-BBEE recognition.
+                As an established, 100% Black-owned enterprise headquartered in Tzaneen, Limpopo, HLUGISO operates with full statutory regularity, verified on the National Treasury Central Supplier Database under Supplier Number <strong>MAAA0818606</strong>, holding CIDB Contractor Grading <strong>Grade 1CE</strong>, SARS Tax Reference No. <strong>9250830230</strong>, SARS Tax Compliance Status (TCS) PIN: <strong>{taxPin}</strong>, and Level 1 B-BBEE recognition.
               </p>
 
               <p>
@@ -867,6 +961,16 @@ export const TenderHub: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Official Corporate Letterhead Modal (Guaranteed 1-Page A4 Print) */}
+      {isLetterheadModalOpen && (
+        <PrintableLetterheadModal
+          recipient={tenderRecipient}
+          reference={tenderRef}
+          taxPin={taxPin}
+          onClose={() => setIsLetterheadModalOpen(false)}
+        />
+      )}
     </div>
   );
 };
