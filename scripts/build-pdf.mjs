@@ -14,7 +14,7 @@ const htmlContent = `<!DOCTYPE html>
 <style>
   @page {
     size: A4;
-    margin: 10mm 14mm 10mm 14mm;
+    margin: 0;
   }
   * {
     box-sizing: border-box;
@@ -29,19 +29,20 @@ const htmlContent = `<!DOCTYPE html>
     font-size: 9.8pt;
   }
 
-  /* Page Wrapper for Screen & Print */
+  /* Page Wrapper for Screen & Print - Fixed A4 with Bottom Pinned Footer */
   .page {
     width: 210mm;
-    min-height: 297mm;
-    padding: 10mm 14mm 10mm 14mm;
+    height: 297mm;
+    padding: 12mm 14mm 12mm 14mm;
     margin: 20px auto;
     background: #FFFFFF;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    page-break-after: always;
-    break-after: page;
+    box-sizing: border-box;
+    position: relative;
+    overflow: hidden;
   }
 
   @media print {
@@ -51,9 +52,9 @@ const htmlContent = `<!DOCTYPE html>
       print-color-adjust: exact;
     }
     .page {
-      width: 100%;
-      min-height: 0;
-      padding: 0;
+      width: 210mm;
+      height: 297mm;
+      padding: 12mm 14mm 12mm 14mm;
       margin: 0;
       box-shadow: none;
       page-break-inside: avoid;
@@ -70,7 +71,7 @@ const htmlContent = `<!DOCTYPE html>
   }
 
   .page-content {
-    flex-grow: 1;
+    flex: 1 0 auto;
   }
 
   /* Header Styles */
@@ -328,15 +329,17 @@ const htmlContent = `<!DOCTYPE html>
     align-items: center;
   }
 
-  /* Footer */
+  /* Footer - Pinned to Bottom */
   .footer {
     border-top: 1px solid #E5E7EB;
     padding-top: 8px;
-    margin-top: 14px;
+    margin-top: auto;
     display: flex;
     justify-content: space-between;
+    align-items: center;
     font-size: 8.2pt;
     color: #6B7280;
+    flex-shrink: 0;
   }
   .footer strong {
     color: #064E3B;
@@ -432,8 +435,8 @@ const htmlContent = `<!DOCTYPE html>
     </div>
 
     <div class="footer">
-      <span>HLUGISO (PTY) LTD &bull; Company Profile &amp; Commercial Capabilities</span>
-      <span>CSD: MAAA0818606 &bull; Tel: +27 83 597 6462</span>
+      <span>HLUGISO (PTY) LTD &bull; Reg No: 2019/412705/07 &bull; CSD: MAAA0818606</span>
+      <span>SARS Tax Compliant &bull; B-BBEE Level 1</span>
       <span>Page 1 of 3</span>
     </div>
   </div>
@@ -527,8 +530,8 @@ const htmlContent = `<!DOCTYPE html>
     </div>
 
     <div class="footer">
-      <span>HLUGISO (PTY) LTD &bull; Core Commercial Services</span>
-      <span>Tender &amp; Municipal Supplier &bull; CIDB Grade 1CE</span>
+      <span>HLUGISO (PTY) LTD &bull; Reg No: 2019/412705/07 &bull; CSD: MAAA0818606</span>
+      <span>SARS Tax Compliant &bull; B-BBEE Level 1</span>
       <span>Page 2 of 3</span>
     </div>
   </div>
