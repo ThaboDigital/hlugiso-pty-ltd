@@ -30,3 +30,5 @@ Thumbs.db
 
 # Temporary build artifacts
 company-profile.html
+.vercel
+rocommended/
