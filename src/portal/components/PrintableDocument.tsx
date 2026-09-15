@@ -115,17 +115,33 @@ export const PrintableDocument: React.FC<PrintableDocumentProps> = ({
         <div className="p-8 sm:p-12 text-gray-800 font-sans space-y-6 print:p-8">
           {/* Header Row */}
           <div className="flex justify-between items-start border-b-2 border-[#064E3B] pb-6">
-            <div className="space-y-1">
+            <div className="space-y-2">
               <img 
                 src="/branding/hlugiso-logo-primary.png" 
                 alt="HLUGISO (PTY) LTD" 
-                className="h-12 w-auto object-contain mb-2"
+                className="h-12 w-auto object-contain mb-1"
               />
-              <div className="text-xs text-gray-600 leading-tight">
-                <strong>HLUGISO (PTY) LTD</strong> &bull; Reg: <strong>{COMPANY_DETAILS.registrationNumber}</strong><br />
-                CSD: <strong>{COMPANY_DETAILS.csdNumber}</strong> &bull; CIDB: <strong>{COMPANY_DETAILS.cidbGrading}</strong><br />
-                SARS Tax PIN: <strong>Active Compliance Status</strong> &bull; B-BBEE: <strong>Level 1 (100% Black Owned)</strong><br />
-                Stand No 01, Tickyline Village, Lenyenye, Tzaneen, 0850
+              <div className="text-xs text-gray-600 leading-relaxed">
+                <div className="text-sm font-bold text-gray-900 tracking-tight">HLUGISO (PTY) LTD</div>
+                <div className="text-[11px] text-gray-500 font-mono">
+                  Reg: <strong>2019/412705/07</strong> &bull; CSD: <strong>{COMPANY_DETAILS.csdNumber}</strong>
+                </div>
+                <div className="text-xs text-gray-600 mt-1.5 space-y-0.5">
+                  <div className="flex items-center space-x-1.5">
+                    <span className="text-gray-500 font-medium">Tel / WhatsApp:</span>
+                    <strong className="text-gray-900 font-sans">+27 83 597 6462</strong>
+                  </div>
+                  <div className="flex items-center space-x-1.5">
+                    <span className="text-gray-500 font-medium">Email:</span>
+                    <strong className="text-gray-900 font-sans">info@hlugiso.co.za</strong>
+                    <span className="text-gray-400">&bull;</span>
+                    <span className="text-gray-500 font-medium">Web:</span>
+                    <strong className="text-gray-900 font-sans">www.hlugiso.co.za</strong>
+                  </div>
+                  <div className="text-gray-500 text-[11px]">
+                    Stand No 01, Tickyline Village, Lenyenye, Tzaneen, 0850
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -133,7 +149,7 @@ export const PrintableDocument: React.FC<PrintableDocumentProps> = ({
               <div className="text-2xl font-black tracking-tight text-[#064E3B] uppercase">
                 {isQuote ? 'QUOTATION' : 'INVOICE'}
               </div>
-              <div className="text-sm font-bold text-gray-900">
+              <div className="text-sm font-bold text-gray-900 font-mono">
                 {isQuote ? quote?.quoteNumber : invoice?.invoiceNumber}
               </div>
               <div className="text-xs text-gray-500">
