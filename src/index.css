@@ -60,6 +60,57 @@
     z-index: 999999 !important;
   }
 
+  /* When printing quotation or invoice document specifically */
+  body.printing-document > #root,
+  body:has(#printable-document-modal) > #root {
+    display: none !important;
+    visibility: hidden !important;
+    height: 0 !important;
+    max-height: 0 !important;
+    overflow: hidden !important;
+  }
+
+  body.printing-document,
+  body:has(#printable-document-modal) {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #FFFFFF !important;
+    width: 100% !important;
+  }
+
+  body.printing-document #printable-document-modal,
+  body:has(#printable-document-modal) #printable-document-modal {
+    display: block !important;
+    position: static !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #FFFFFF !important;
+    inset: auto !important;
+    box-shadow: none !important;
+  }
+
+  body.printing-document #printable-document-sheet,
+  body:has(#printable-document-modal) #printable-document-sheet {
+    display: block !important;
+    position: static !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #FFFFFF !important;
+    box-shadow: none !important;
+    border: none !important;
+    border-radius: 0 !important;
+  }
+
+  #printable-document-modal [data-print-hide],
+  #printable-document-modal .print\:hidden {
+    display: none !important;
+    visibility: hidden !important;
+    height: 0 !important;
+  }
+
   .no-print {
     display: none !important;
   }

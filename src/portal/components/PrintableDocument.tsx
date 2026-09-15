@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Printer, MessageCircle, X, Download, ShieldCheck, CheckCircle } from 'lucide-react';
 import { QuoteDocument, InvoiceDocument } from '../types';
 import { usePortal } from '../PortalContext';
@@ -20,8 +21,30 @@ export const PrintableDocument: React.FC<PrintableDocumentProps> = ({
   const quote = isQuote ? (doc as QuoteDocument) : null;
   const invoice = !isQuote ? (doc as InvoiceDocument) : null;
 
+  useEffect(() => {
+    // Add print isolation class so background portal is 100% hidden during Ctrl+P or print
+    document.body.classList.add('printing-document');
+
+    const handleBeforePrint = () => {
+      document.body.classList.add('printing-document');
+    };
+
+    window.addEventListener('beforeprint', handleBeforePrint);
+
+    return () => {
+      document.body.classList.remove('printing-document');
+      window.removeEventListener('beforeprint', handleBeforePrint);
+    };
+  }, []);
+
   const handlePrint = () => {
+    document.body.classList.add('printing-document');
     window.print();
+    const cleanUp = () => {
+      window.removeEventListener('afterprint', cleanUp);
+    };
+    window.addEventListener('afterprint', cleanUp);
+    setTimeout(cleanUp, 3000);
   };
 
   const handleSendWhatsApp = () => {
@@ -71,11 +94,20 @@ export const PrintableDocument: React.FC<PrintableDocumentProps> = ({
     window.open(url, '_blank');
   };
 
-  return (
-    <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex justify-center overflow-y-auto p-2 sm:p-6 print:p-0 print:bg-white print:static print:inset-auto print:overflow-visible">
-      <div className="relative w-full max-w-4xl bg-white rounded-2xl shadow-2xl overflow-hidden my-auto print:m-0 print:shadow-none print:rounded-none print:max-w-none print:w-full">
+  const modalContent = (
+    <div 
+      id="printable-document-modal"
+      className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex justify-center overflow-y-auto p-2 sm:p-6 print:p-0 print:bg-white print:static print:inset-auto print:overflow-visible"
+    >
+      <div 
+        id="printable-document-sheet"
+        className="relative w-full max-w-4xl bg-white rounded-2xl shadow-2xl overflow-hidden my-auto print:m-0 print:shadow-none print:rounded-none print:max-w-none print:w-full"
+      >
         {/* Modal Action Bar (Hidden in Print) */}
-        <div className="bg-gray-900 text-white px-6 py-4 flex flex-wrap items-center justify-between gap-3 border-b border-gray-800 print:hidden">
+        <div 
+          data-print-hide
+          className="bg-gray-900 text-white px-6 py-4 flex flex-wrap items-center justify-between gap-3 border-b border-gray-800 print:hidden"
+        >
           <div className="flex items-center space-x-2">
             <span className="text-xs uppercase tracking-wider font-bold text-emerald-400 bg-emerald-950/80 px-2.5 py-1 rounded border border-emerald-800">
               {isQuote ? 'Formal Quotation' : 'Commercial Invoice'}
@@ -378,4 +410,6 @@ export const PrintableDocument: React.FC<PrintableDocumentProps> = ({
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 };
