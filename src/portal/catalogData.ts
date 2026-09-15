@@ -1,6 +1,139 @@
 import { LineItem, BankingDetails, FleetUnit, ClientRecord, QuoteDocument, InvoiceDocument, RfqLead } from './types';
 
 export const DEFAULT_CATALOG_ITEMS: Omit<LineItem, 'id' | 'total'>[] = [
+  // --- Cleaning & Facility Maintenance ---
+  {
+    description: 'Monthly Corporate Office Janitorial Contract (Daily cleaner, chemicals, hygiene management, supervisory audit)',
+    category: 'Cleaning',
+    quantity: 1,
+    unit: 'Month',
+    unitPrice: 8500,
+  },
+  {
+    description: 'Industrial Carpet Steam Extraction & Upholstery Deep Cleaning (Hospital-grade sanitisation, stain treatment)',
+    category: 'Cleaning',
+    quantity: 1,
+    unit: 'Per m² / Office Suite',
+    unitPrice: 1800,
+  },
+  {
+    description: 'Deep Ablution Descaling & Sanitary Hygiene Disinfection (Restroom descaling, fixtures, dispensers)',
+    category: 'Cleaning',
+    quantity: 1,
+    unit: 'Per Restroom Block',
+    unitPrice: 1450,
+  },
+  {
+    description: 'High-Speed Floor Stripping, Deep Scrubbing & Polymer Sealing (Hard surfaces, vinyl, tiles)',
+    category: 'Cleaning',
+    quantity: 1,
+    unit: 'Per 100 m²',
+    unitPrice: 2200,
+  },
+  {
+    description: 'Post-Construction / Post-Renovation Deep Cleanup & Debris Removal (Builder clean, window scraping, dust elimination)',
+    category: 'Cleaning',
+    quantity: 1,
+    unit: 'Project / Site Service',
+    unitPrice: 4500,
+  },
+  {
+    description: 'Commercial Pre- & Post-Event Janitorial Cleanup & Waste Bagging Support',
+    category: 'Cleaning',
+    quantity: 1,
+    unit: 'Day Service',
+    unitPrice: 1800,
+  },
+
+  // --- Construction & Civil Engineering (CIDB Grade 1CE) ---
+  {
+    description: '80mm Industrial Interlocking Concrete Pavers (Bedding sand, precision laying, joint sand & mechanical compaction)',
+    category: 'Construction',
+    quantity: 100,
+    unit: 'Per m²',
+    unitPrice: 380,
+  },
+  {
+    description: '60mm Domestic / Commercial Paving (Supplied, laid, compacted & edged)',
+    category: 'Construction',
+    quantity: 100,
+    unit: 'Per m²',
+    unitPrice: 320,
+  },
+  {
+    description: 'Precast Concrete Barrier Kerbing (Fig 3 / Fig 8 with concrete haunching backing & jointing)',
+    category: 'Construction',
+    quantity: 20,
+    unit: 'Per Linear Metre',
+    unitPrice: 240,
+  },
+  {
+    description: 'Heavy-Duty Perimeter Security Fencing (1.8m Diamond Mesh / Welded Wire with treated posts & stays)',
+    category: 'Construction',
+    quantity: 50,
+    unit: 'Per Linear Metre',
+    unitPrice: 420,
+  },
+  {
+    description: 'Concrete Stormwater V-Drain Channeling & Surface Runoff Mitigation (Excavation, cast-in-place concrete)',
+    category: 'Construction',
+    quantity: 10,
+    unit: 'Per Linear Metre',
+    unitPrice: 480,
+  },
+  {
+    description: 'Commercial Building Plastering, Crack Repair & Weatherproof Painting (Interior / Exterior refurbishment)',
+    category: 'Construction',
+    quantity: 1,
+    unit: 'Per 100 m²',
+    unitPrice: 3800,
+  },
+  {
+    description: 'Site Clearing, Bulk Earthworks & Sub-Base Road Prep (G5/G7 material grading & compaction)',
+    category: 'Construction',
+    quantity: 1,
+    unit: 'Per Day / Equipment Run',
+    unitPrice: 6500,
+  },
+
+  // --- General Supply & Procurement ---
+  {
+    description: 'SABS-Approved Reflective Conti-Suits / Flame & Acid Retardant Workwear with Reflective Tape',
+    category: 'Procurement',
+    quantity: 10,
+    unit: 'Set / Unit',
+    unitPrice: 450,
+  },
+  {
+    description: 'SABS Heavy-Duty Steel Toe-Cap Safety Boots & Protective Footwear',
+    category: 'Procurement',
+    quantity: 10,
+    unit: 'Pair',
+    unitPrice: 520,
+  },
+  {
+    description: 'Commercial Cleaning Consumables Bulk Pack (25L Pine Gel, 25L Bleach, 25L Degreaser, Mops, Brooms & Cloths)',
+    category: 'Procurement',
+    quantity: 1,
+    unit: 'Bundle Pack',
+    unitPrice: 1650,
+  },
+  {
+    description: 'Corporate Restroom Hygiene Pack (Virgin 2-Ply Paper 48s, Liquid Hand Soap 5L, Aerosol Refills)',
+    category: 'Procurement',
+    quantity: 1,
+    unit: 'Pack',
+    unitPrice: 1250,
+  },
+  {
+    description: 'General Facility Maintenance Hardware & Fasteners Consumable Kit',
+    category: 'Procurement',
+    quantity: 1,
+    unit: 'Kit',
+    unitPrice: 1850,
+  },
+
+  // --- Mobile Cold-Chain & Sanitation ---
   {
     description: 'VIP Mobile Restroom Trailer (Dual Private Cubicles, Porcelain Flush, Solar Light, Basins)',
     category: 'Sanitation',
@@ -15,6 +148,15 @@ export const DEFAULT_CATALOG_ITEMS: Omit<LineItem, 'id' | 'total'>[] = [
     unit: 'Weekend Hire (Thu - Sun)',
     unitPrice: 3500,
   },
+  {
+    description: 'Daily Commercial Cold-Room / VIP Restroom Rental (Mid-week or short duration)',
+    category: 'Cold-Chain',
+    quantity: 1,
+    unit: 'Per Day',
+    unitPrice: 1200,
+  },
+
+  // --- Events & Funeral Infrastructure ---
   {
     description: 'Waterproof Stretch Tent (Heavy-Duty Bedouin, Weather-Resistant, Setup & Rigging included)',
     category: 'Tents',
@@ -43,6 +185,8 @@ export const DEFAULT_CATALOG_ITEMS: Omit<LineItem, 'id' | 'total'>[] = [
     unit: 'Event Duration',
     unitPrice: 1500,
   },
+
+  // --- Ceremonial & Agricultural Livestock ---
   {
     description: 'Ceremonial Livestock: Prime Slaughter Ox / Cattle (Inspected, Healthy, Limpopo Farm Sourced)',
     category: 'Livestock',
@@ -57,19 +201,30 @@ export const DEFAULT_CATALOG_ITEMS: Omit<LineItem, 'id' | 'total'>[] = [
     unit: 'Head',
     unitPrice: 2600,
   },
+
+  // --- Catering & Hospitality ---
+  {
+    description: 'Traditional Funeral / Event Feast Catering & Buffet Meal Service (Prepared under certified hygiene standards)',
+    category: 'Catering',
+    quantity: 50,
+    unit: 'Per Person / Plate',
+    unitPrice: 120,
+  },
+  {
+    description: 'VIP Executive Refreshment & Meeting Staging Pack (Tea, Coffee, Snacks & Premium Bottled Water)',
+    category: 'Catering',
+    quantity: 1,
+    unit: 'Per Day',
+    unitPrice: 1500,
+  },
+
+  // --- Transport & Delivery ---
   {
     description: 'Doorstep Livestock Trailer Delivery & Offloading (Greater Tzaneen / Mopani Region)',
     category: 'Transport',
     quantity: 1,
     unit: 'Trip',
     unitPrice: 850,
-  },
-  {
-    description: 'Commercial Pre- & Post-Event Janitorial Cleanup & Waste Bagging Support',
-    category: 'Cleaning',
-    quantity: 1,
-    unit: 'Day Service',
-    unitPrice: 1800,
   },
   {
     description: 'Fleet Delivery, Towing & Site Rigging Surcharge (Per km outside Tzaneen 30km radius)',

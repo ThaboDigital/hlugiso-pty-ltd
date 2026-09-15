@@ -6,7 +6,7 @@ export type FleetStatus = 'available' | 'booked' | 'in_transit' | 'maintenance';
 export interface LineItem {
   id: string;
   description: string;
-  category: 'Cold-Chain' | 'Sanitation' | 'Tents' | 'Sound' | 'Livestock' | 'Cleaning' | 'Transport' | 'Other';
+  category: 'Cleaning' | 'Construction' | 'Procurement' | 'Cold-Chain' | 'Sanitation' | 'Tents' | 'Sound' | 'Livestock' | 'Transport' | 'Catering' | 'General' | 'Other';
   quantity: number;
   unit: string;
   unitPrice: number;
@@ -17,11 +17,12 @@ export interface ClientRecord {
   id: string;
   name: string;
   organization?: string;
-  type: 'Funeral Parlour' | 'Burial Society' | 'Corporate' | 'Municipality' | 'Family / Private';
+  type: 'Funeral Parlour' | 'Burial Society' | 'Corporate' | 'Municipality' | 'Government Dept' | 'Contractor' | 'Family / Private' | 'Other';
   phone: string;
   whatsapp?: string;
   email?: string;
   address?: string;
+  location?: string;
   notes?: string;
 }
 
@@ -30,13 +31,16 @@ export interface QuoteDocument {
   quoteNumber: string;
   date: string;
   validUntil: string;
+  serviceCategory?: string;
   clientId?: string;
   clientName: string;
   clientOrganization?: string;
   clientPhone: string;
   clientEmail?: string;
-  eventLocation: string;
-  eventDate: string;
+  serviceLocation?: string;
+  serviceDate?: string;
+  eventLocation?: string; // backwards compatibility
+  eventDate?: string; // backwards compatibility
   status: DocumentStatus;
   items: LineItem[];
   subtotal: number;
@@ -44,6 +48,8 @@ export interface QuoteDocument {
   discount: number;
   total: number;
   depositRequired: number;
+  paymentTerms?: string;
+  paymentTermsText?: string;
   notes?: string;
   convertedToInvoiceId?: string;
   createdAt: string;
@@ -56,13 +62,16 @@ export interface InvoiceDocument {
   dueDate: string;
   quoteId?: string;
   quoteNumber?: string;
+  serviceCategory?: string;
   clientId?: string;
   clientName: string;
   clientOrganization?: string;
   clientPhone: string;
   clientEmail?: string;
-  eventLocation: string;
-  eventDate: string;
+  serviceLocation?: string;
+  serviceDate?: string;
+  eventLocation?: string; // backwards compatibility
+  eventDate?: string; // backwards compatibility
   status: InvoiceStatus;
   items: LineItem[];
   subtotal: number;
@@ -71,6 +80,8 @@ export interface InvoiceDocument {
   total: number;
   depositPaid: number;
   balanceDue: number;
+  paymentTerms?: string;
+  paymentTermsText?: string;
   notes?: string;
   createdAt: string;
 }

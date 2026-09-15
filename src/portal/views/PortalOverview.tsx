@@ -57,7 +57,7 @@ export const PortalOverview: React.FC<PortalOverviewProps> = ({
             Welcome, Thabo Makola
           </h1>
           <p className="text-xs sm:text-sm text-emerald-100 max-w-2xl leading-relaxed">
-            Manage your weekend funeral logistics, client quotations, tax invoices, and tender documentation under unified HLUGISO governance.
+            Manage commercial contracts across Cleaning, Civil Works (CIDB 1CE), General Procurement, Cold-Chain &amp; Fleet hire under unified HLUGISO governance.
           </p>
         </div>
 
@@ -253,14 +253,17 @@ export const PortalOverview: React.FC<PortalOverviewProps> = ({
                   <div className="space-y-0.5">
                     <div className="flex items-center space-x-2">
                       <span className="font-bold text-gray-900">{q.quoteNumber}</span>
-                      <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded ${
+                      <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800">
+                        {q.serviceCategory || 'Commercial'}
+                      </span>
+                      <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded ${
                         q.status === 'accepted' ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-100 text-gray-700'
                       }`}>
                         {q.status}
                       </span>
                     </div>
                     <div className="text-gray-600 font-medium">{q.clientName}</div>
-                    <div className="text-[11px] text-gray-400">{q.eventLocation} &bull; {q.date}</div>
+                    <div className="text-[11px] text-gray-400">{q.serviceLocation || q.eventLocation} &bull; {q.date}</div>
                   </div>
 
                   <div className="text-right space-y-1 shrink-0">
@@ -310,7 +313,10 @@ export const PortalOverview: React.FC<PortalOverviewProps> = ({
                   <div className="space-y-0.5">
                     <div className="flex items-center space-x-2">
                       <span className="font-bold text-gray-900">{inv.invoiceNumber}</span>
-                      <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded ${
+                      <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800">
+                        {inv.serviceCategory || 'Commercial'}
+                      </span>
+                      <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded ${
                         inv.status === 'paid'
                           ? 'bg-emerald-100 text-emerald-800'
                           : inv.status === 'deposit_paid'
@@ -321,7 +327,7 @@ export const PortalOverview: React.FC<PortalOverviewProps> = ({
                       </span>
                     </div>
                     <div className="text-gray-600 font-medium">{inv.clientName}</div>
-                    <div className="text-[11px] text-gray-400">Due: {inv.dueDate}</div>
+                    <div className="text-[11px] text-gray-400">{inv.serviceLocation || inv.eventLocation} &bull; Due: {inv.dueDate}</div>
                   </div>
 
                   <div className="text-right space-y-1 shrink-0">

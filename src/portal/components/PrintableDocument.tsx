@@ -28,12 +28,17 @@ export const PrintableDocument: React.FC<PrintableDocumentProps> = ({
     const clientPhone = (doc.clientPhone || '').replace(/\D/g, '');
     const phoneToUse = clientPhone.startsWith('0') ? '27' + clientPhone.slice(1) : clientPhone;
 
+    const location = doc.serviceLocation || doc.eventLocation || 'Tzaneen & Surrounds';
+    const dateTimeline = doc.serviceDate || doc.eventDate || 'Scheduled / As Agreed';
+    const category = doc.serviceCategory || 'Commercial Multi-Service';
+
     let message = `*HLUGISO (PTY) LTD — OFFICIAL ${isQuote ? 'QUOTATION' : 'INVOICE'}*\n\n`;
     message += `*Doc Ref:* ${isQuote ? quote?.quoteNumber : invoice?.invoiceNumber}\n`;
+    message += `*Service Division:* ${category}\n`;
     message += `*Date:* ${doc.date}\n`;
     message += `*Client:* ${doc.clientName} ${doc.clientOrganization ? `(${doc.clientOrganization})` : ''}\n`;
-    message += `*Event Location:* ${doc.eventLocation}\n`;
-    message += `*Event Date:* ${doc.eventDate}\n\n`;
+    message += `*Project/Site Location:* ${location}\n`;
+    message += `*Timeline/Period:* ${dateTimeline}\n\n`;
     message += `*SUMMARY OF ITEMS:*\n`;
     doc.items.forEach((item, idx) => {
       message += `${idx + 1}. ${item.description} (${item.quantity}x @ R${item.unitPrice.toLocaleString()}) = R${item.total.toLocaleString()}\n`;
@@ -43,11 +48,13 @@ export const PrintableDocument: React.FC<PrintableDocumentProps> = ({
     if (doc.discount > 0) message += `*Discount Applied:* -R${doc.discount.toLocaleString()}\n`;
     message += `*TOTAL:* R${doc.total.toLocaleString()}\n`;
 
-    if (isQuote && quote?.depositRequired) {
-      message += `*Required Booking Deposit (50%):* R${quote.depositRequired.toLocaleString()}\n`;
-      message += `*Balance on Setup:* R${(doc.total - quote.depositRequired).toLocaleString()}\n\n`;
+    if (isQuote && quote?.depositRequired && quote.depositRequired > 0 && quote.depositRequired < doc.total) {
+      message += `*Required Deposit:* R${quote.depositRequired.toLocaleString()}\n`;
+      message += `*Balance on Handover/Completion:* R${(doc.total - quote.depositRequired).toLocaleString()}\n\n`;
+    } else if (isQuote && doc.paymentTermsText) {
+      message += `*Payment Terms:* ${doc.paymentTermsText}\n\n`;
     } else if (invoice) {
-      message += `*Deposit Credited:* R${invoice.depositPaid.toLocaleString()}\n`;
+      if (invoice.depositPaid > 0) message += `*Deposit/Prior Payment Credited:* R${invoice.depositPaid.toLocaleString()}\n`;
       message += `*BALANCE DUE:* R${invoice.balanceDue.toLocaleString()}\n\n`;
     }
 
@@ -156,7 +163,7 @@ export const PrintableDocument: React.FC<PrintableDocumentProps> = ({
             </div>
           </div>
 
-          {/* Client & Event Coordinates */}
+          {/* Client & Project / Service Coordinates */}
           <div className="grid grid-cols-2 gap-6 bg-gray-50 p-4 rounded-xl border border-gray-200 text-xs">
             <div className="space-y-1">
               <span className="font-bold text-gray-500 uppercase tracking-wider text-[10px] block">
@@ -174,13 +181,18 @@ export const PrintableDocument: React.FC<PrintableDocumentProps> = ({
 
             <div className="space-y-1">
               <span className="font-bold text-gray-500 uppercase tracking-wider text-[10px] block">
-                Deployment & Event Logistics:
+                Project &amp; Service Coordinates:
               </span>
+              {doc.serviceCategory && (
+                <div className="font-semibold text-[#064E3B]">
+                  Division: <span className="font-bold">{doc.serviceCategory}</span>
+                </div>
+              )}
               <div className="font-semibold text-gray-900">
-                Site Location: <span className="font-normal">{doc.eventLocation || 'Tzaneen & Surrounds'}</span>
+                Site / Location: <span className="font-normal">{doc.serviceLocation || doc.eventLocation || 'Tzaneen & Surrounds'}</span>
               </div>
               <div className="font-semibold text-gray-900">
-                Deployment Date: <span className="font-normal">{doc.eventDate || 'Scheduled Weekend'}</span>
+                Timeline / Date: <span className="font-normal">{doc.serviceDate || doc.eventDate || 'Scheduled / As Agreed'}</span>
               </div>
               <div className="text-gray-600">
                 Direct Line: <strong>+27 83 597 6462</strong> (Managing Director)
@@ -243,30 +255,52 @@ export const PrintableDocument: React.FC<PrintableDocumentProps> = ({
                 <span className="text-[#064E3B]">R {doc.total.toLocaleString()}</span>
               </div>
 
-              {/* Deposit / Balance breakdown */}
-              {isQuote && quote?.depositRequired ? (
+              {/* Payment terms and deposit breakdown */}
+              {isQuote && quote?.depositRequired && quote.depositRequired > 0 && quote.depositRequired < doc.total ? (
                 <div className="bg-emerald-50 p-2.5 rounded-lg border border-emerald-200 text-xs space-y-1">
                   <div className="flex justify-between font-bold text-emerald-900">
-                    <span>50% Upfront Booking Deposit:</span>
+                    <span>Required Commitment Deposit:</span>
                     <span>R {quote.depositRequired.toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between text-[11px] text-emerald-700">
-                    <span>Balance Due Upon Site Handover:</span>
+                    <span>Balance Payable on Completion / Handover:</span>
                     <span>R {(doc.total - quote.depositRequired).toLocaleString()}</span>
+                  </div>
+                  {doc.paymentTermsText && (
+                    <div className="text-[10px] text-emerald-800 font-medium pt-0.5 border-t border-emerald-200/60">
+                      Terms: {doc.paymentTermsText}
+                    </div>
+                  )}
+                </div>
+              ) : isQuote ? (
+                <div className="bg-gray-50 p-2.5 rounded-lg border border-gray-200 text-xs space-y-0.5">
+                  <div className="flex justify-between font-semibold text-gray-800">
+                    <span>Payment Terms:</span>
+                    <span className="text-[#064E3B]">{doc.paymentTermsText || '30 Days from Tax Invoice (Official PO)'}</span>
+                  </div>
+                  <div className="text-[10px] text-gray-500">
+                    Full settlement upon approved completion / standard corporate billing cycle.
                   </div>
                 </div>
               ) : null}
 
               {invoice ? (
                 <div className="bg-gray-50 p-2.5 rounded-lg border border-gray-200 text-xs space-y-1">
-                  <div className="flex justify-between text-gray-600">
-                    <span>Deposit / Prior Payment Received:</span>
-                    <span className="font-bold text-emerald-700">R {invoice.depositPaid.toLocaleString()}</span>
-                  </div>
+                  {invoice.depositPaid > 0 && (
+                    <div className="flex justify-between text-gray-600">
+                      <span>Deposit / Prior Payment Credited:</span>
+                      <span className="font-bold text-emerald-700">R {invoice.depositPaid.toLocaleString()}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between font-bold text-sm text-gray-900 border-t border-gray-200 pt-1">
                     <span>OUTSTANDING BALANCE:</span>
                     <span className="text-red-700">R {invoice.balanceDue.toLocaleString()}</span>
                   </div>
+                  {invoice.paymentTermsText && (
+                    <div className="text-[10px] text-gray-500 pt-0.5">
+                      Terms: {invoice.paymentTermsText}
+                    </div>
+                  )}
                 </div>
               ) : null}
             </div>
@@ -300,13 +334,14 @@ export const PrintableDocument: React.FC<PrintableDocumentProps> = ({
             {/* Terms & Notes */}
             <div className="p-4 bg-gray-50 rounded-xl border border-gray-200 text-xs space-y-1.5 text-gray-600">
               <div className="font-bold text-gray-900 uppercase text-[11px] tracking-wider">
-                Operational Terms &amp; Conditions
+                Commercial Terms &amp; Conditions
               </div>
-              <ul className="list-disc list-inside space-y-0.5 text-[11px] text-gray-600">
-                <li>Trailer & equipment bookings are confirmed upon receipt of 50% deposit.</li>
-                <li>Hygienic pre-trip inspection and sanitization performed prior to dispatch.</li>
-                <li>Client to provide safe and accessible terrain for trailer parking and towing vehicles.</li>
-                <li>Standby AVR generator provided with sound packages ensures uninterrupted power.</li>
+              <ul className="list-disc list-inside space-y-1 text-[11px] text-gray-600 leading-relaxed">
+                <li>Quotations remain valid for 14 calendar days from date of issue unless specified otherwise.</li>
+                <li>Official Purchase Orders (PO) accepted for government departments, municipalities, and verified corporate partners.</li>
+                <li>Works, services, and deliveries executed in strict compliance with applicable standards (CIDB 1CE / OHS / SABS / Hygiene).</li>
+                <li>Mobilization, material delivery, or equipment deployment scheduled upon agreement of project milestones.</li>
+                <li>Direct EFT into HLUGISO (Pty) Ltd First National Bank (FNB) corporate cheque account using document reference.</li>
               </ul>
             </div>
           </div>
